@@ -622,7 +622,6 @@
     } else if (arState === 'steady') {
       drawRakhiAt(applyManualAdjust(smooth), 1);
     }
-    updateAndDrawParticles();
   }
 
   function applyManualAdjust(t) {
@@ -651,13 +650,19 @@
     // hand span (knuckle row) defines how wide the band should be — the wrist itself is
     // narrower than the knuckle row, so this stays well under 1x, not over it
     const span = Math.hypot(pinkyMcp.x - indexMcp.x, pinkyMcp.y - indexMcp.y);
-    const WRIST_WIDTH_RATIO = 1.1; // tune this one number if the band still overhangs the arm
+    // re-derived from Sushreya's reference photo: the medallion alone should read as roughly
+    // 65-75% of the visible forearm width, and the medallion is ~74% of the full composite
+    // (composite includes the flanking bead spacers) — so composite width ≈ wrist width.
+    // Still an estimate: knuckle-span is a proxy for wrist width, not a measurement of it —
+    // use the pinch-to-resize on the placed Rakhi as the real fix if this default is still off.
+    const WRIST_WIDTH_RATIO = 1.0;
     const bandWidth = Math.max(span * WRIST_WIDTH_RATIO, 40);
     const bandHeight = bandWidth * (rakhiImg.naturalHeight / rakhiImg.naturalWidth);
 
-    // anchor point sits a bit past the wrist, onto the forearm
-    const anchorX = wrist.x + dirX * forearmLen * 0.45;
-    const anchorY = wrist.y + dirY * forearmLen * 0.45;
+    // anchor point sits a little past the wrist landmark, toward the forearm — kept small so it
+    // sits ON the wrist crease rather than drifting up the arm
+    const anchorX = wrist.x + dirX * forearmLen * 0.35;
+    const anchorY = wrist.y + dirY * forearmLen * 0.35;
     const angle = Math.atan2(dirY, dirX) + Math.PI / 2;
 
     return { x: anchorX, y: anchorY, angle, width: bandWidth, height: bandHeight };
@@ -697,53 +702,11 @@
     ctx.restore();
   }
 
-  // simple placeholder celebration burst (flowers/sparks) — swap PARTICLE_COLORS or the
-  // draw shape in updateAndDrawParticles() once real illustrations replace this
-  let particles = [];
-  const PARTICLE_COLORS = ['#c73b2b', '#f2c14e', '#f2a33c', '#5c7a52', '#fbf6ee'];
-
-  function spawnCelebration(x, y) {
-    const n = 28;
-    for (let i = 0; i < n; i++) {
-      const angle = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.4;
-      const speed = 2.4 + Math.random() * 2.8;
-      particles.push({
-        x, y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.8, // slight upward bias — reads as a small burst
-        life: 1,
-        decay: 0.011 + Math.random() * 0.009,
-        size: 4 + Math.random() * 5,
-        color: PARTICLE_COLORS[i % PARTICLE_COLORS.length]
-      });
-    }
-  }
-
-  function updateAndDrawParticles() {
-    if (!particles.length) return;
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.06; // gravity
-      p.life -= p.decay;
-      if (p.life <= 0) { particles.splice(i, 1); continue; }
-      ctx.save();
-      ctx.globalAlpha = Math.max(p.life, 0);
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y, p.size, p.size * 0.7, Math.atan2(p.vy, p.vx), 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
   function drawTyingAnimation(now) {
     const t = now - tyingStartAt;
     if (t >= TYING_TOTAL_MS) {
       arState = 'steady';
       revealChrome();
-      spawnCelebration(smooth.x, smooth.y);
       drawRakhiAt(smooth, 1);
       if (!adjustHintShown) {
         adjustHintShown = true;
@@ -925,7 +888,6 @@
         smoothToward(computeTransform(lastLandmarks));
         if (arState === 'tying') drawTyingAnimation(now);
         else if (arState === 'steady') drawRakhiAt(applyManualAdjust(smooth), 1);
-        updateAndDrawParticles();
       }
       requestAnimationFrame(debugLoop);
     };
