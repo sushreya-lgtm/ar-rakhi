@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Send an AR Rakhi</title>
+<meta property="og:title" content="Send an AR Rakhi">
+<meta property="og:description" content="Pick a Rakhi, add a note, and send a link she can open on her phone.">
+<meta name="description" content="Pick a Rakhi, add a note, and send a link she can open on her phone.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf3e7;
+    --card: #fffaf1;
+    --ink: #3a1f1a;
+    --accent: #c73b2b;
+    --gold: #cf9d3f;
+    --muted: #8a7062;
+    --line: #ecdcc4;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Martian Mono', monospace;
+    min-height: 100%;
+  }
+  .page {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin: 0 0 8px;
+  }
+  .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0 0 36px;
+  }
+
+  .step-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    margin: 0 0 12px;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .rakhi-card {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 8px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .rakhi-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .rakhi-card .name {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .rakhi-card:hover {
+    transform: translateY(-2px);
+  }
+  .rakhi-card.selected {
+    border-color: var(--accent);
+    box-shadow: 3px 4px 0 rgba(199,59,43,0.15);
+    background: #fff4ee;
+  }
+
+  .field {
+    text-align: left;
+    margin-bottom: 20px;
+  }
+  .field label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    font-family: 'Martian Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    resize: none;
+  }
+  .field input:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field .hint {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .btn {
+    display: inline-block;
+    width: 100%;
+    font-family: 'Martian Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fffaf1;
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--line);
+  }
+
+  .result {
+    display: none;
+    margin-top: 28px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    padding: 18px;
+    text-align: left;
+  }
+  .result.show { display: block; }
+  .result .label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .link-box {
+    font-size: 11px;
+    word-break: break-all;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .result-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .result-actions .btn { font-size: 11px; padding: 12px 14px; }
+  .copied-note {
+    font-size: 10px;
+    color: var(--accent);
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .copied-note.show { opacity: 1; }
+
+  .note-privacy {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">Raksha Bandhan</div>
+  <h1>Send an AR Rakhi</h1>
+  <p class="subtitle">Pick a Rakhi, add a note, and send a link she can open on her phone —<br>it ties itself onto her wrist through the camera.</p>
+
+  <div class="step-label">1. Pick a Rakhi</div>
+  <div class="gallery" id="gallery">
+    <div class="rakhi-card" data-id="classic" data-name="Classic Red &amp; Gold">
+      <img src="assets/rakhi-classic.svg" alt="Classic red and gold Rakhi">
+      <div class="name">Classic</div>
+    </div>
+    <div class="rakhi-card" data-id="minimal" data-name="Minimal Blush">
+      <img src="assets/rakhi-minimal.svg" alt="Minimal blush Rakhi">
+      <div class="name">Minimal</div>
+    </div>
+    <div class="rakhi-card" data-id="floral" data-name="Floral Green &amp; Gold">
+      <img src="assets/rakhi-floral.svg" alt="Floral green and gold Rakhi">
+      <div class="name">Floral</div>
+    </div>
+  </div>
+
+  <div class="step-label">2. Add a note</div>
+  <div class="field">
+    <label for="fromName">Your name</label>
+    <input type="text" id="fromName" maxlength="40" placeholder="e.g. Sushreya">
+  </div>
+  <div class="field">
+    <label for="note">A short message (optional)</label>
+    <textarea id="note" rows="3" maxlength="140" placeholder="Happy Rakhi! Wish I could tie this one myself."></textarea>
+    <div class="hint" id="noteCount">140 characters left</div>
+  </div>
+
+  <button class="btn" id="createBtn" disabled>Pick a Rakhi to continue</button>
+
+  <div class="result" id="result">
+    <div class="label">Your link is ready</div>
+    <div class="link-box" id="linkBox"></div>
+    <div class="result-actions">
+      <button class="btn" id="shareBtn">Share</button>
+      <button class="btn secondary" id="copyBtn">Copy link</button>
+    </div>
+    <div class="copied-note" id="copiedNote">Copied to clipboard</div>
+  </div>
+
+  <p class="note-privacy">Works best opened directly on a phone — the camera is used live, on-device,<br>to place the Rakhi. Nothing is ever uploaded or stored.</p>
+</div>
+
+<script>
+  const gallery = document.getElementById('gallery');
+  const createBtn = document.getElementById('createBtn');
+  const fromName = document.getElementById('fromName');
+  const note = document.getElementById('note');
+  const noteCount = document.getElementById('noteCount');
+  const result = document.getElementById('result');
+  const linkBox = document.getElementById('linkBox');
+  const copyBtn = document.getElementById('copyBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const copiedNote = document.getElementById('copiedNote');
+
+  let selectedId = null;
+
+  gallery.addEventListener('click', (e) => {
+    const card = e.target.closest('.rakhi-card');
+    if (!card) return;
+    document.querySelectorAll('.rakhi-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedId = card.dataset.id;
+    createBtn.disabled = false;
+    createBtn.textContent = 'Create the link';
+    result.classList.remove('show');
+  });
+
+  note.addEventListener('input', () => {
+    noteCount.textContent = (140 - note.value.length) + ' characters left';
+  });
+
+  function buildLink() {
+    const url = new URL('rakhi.html', window.location.href);
+    url.searchParams.set('d', selectedId);
+    if (fromName.value.trim()) url.searchParams.set('n', fromName.value.trim());
+    if (note.value.trim()) url.searchParams.set('m', note.value.trim());
+    return url.toString();
+  }
+
+  createBtn.addEventListener('click', () => {
+    if (!selectedId) return;
+    const link = buildLink();
+    linkBox.textContent = link;
+    result.classList.add('show');
+    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    const link = linkBox.textContent;
+    try {
+      await navigator.clipboard.writeText(link);
+      copiedNote.classList.add('show');
+      setTimeout(() => copiedNote.classList.remove('show'), 1800);
+    } catch (err) {
+      // clipboard API unavailable — select the text so the user can copy manually
+      const range = document.createRange();
+      range.selectNodeContents(linkBox);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    const link = linkBox.textContent;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'A Rakhi for you', text: 'I sent you an AR Rakhi 🧵', url: link });
+      } catch (err) { /* user cancelled share — no action needed */ }
+    } else {
+      copyBtn.click();
+    }
+  });
+</script>
+</body>
+</html>

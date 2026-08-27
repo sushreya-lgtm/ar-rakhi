@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 170" width="340" height="170">
+  <!-- thread band -->
+  <path d="M 30 92 C 90 62, 140 118, 170 88 C 200 58, 250 116, 310 84"
+        fill="none" stroke="#e6b8ad" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- small end knots -->
+  <circle cx="30" cy="92" r="4" fill="#d99a8c"/>
+  <circle cx="310" cy="84" r="4" fill="#d99a8c"/>
+
+  <!-- center charm -->
+  <circle cx="170" cy="88" r="16" fill="#fbf6ee" stroke="#cf9d3f" stroke-width="2.5"/>
+  <circle cx="170" cy="88" r="5" fill="#cf9d3f"/>
+</svg>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>A Rakhi for you</title>
+<meta property="og:title" content="A Rakhi for you">
+<meta property="og:description" content="Open on your phone and point the camera at your wrist.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf3e7;
+    --card: #fffaf1;
+    --ink: #3a1f1a;
+    --accent: #c73b2b;
+    --gold: #cf9d3f;
+    --muted: #8a7062;
+    --line: #ecdcc4;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    color: var(--ink);
+    font-family: 'Martian Mono', monospace;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* ---- intro screen ---- */
+  #intro {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 24px;
+    z-index: 20;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  #introImg {
+    width: 220px;
+    max-width: 70vw;
+    height: auto;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 6px 14px rgba(58,31,26,0.12));
+  }
+  h1 {
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin: 0 0 6px;
+  }
+  #fromLine {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 4px;
+  }
+  #noteLine {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.6;
+    max-width: 360px;
+    margin: 12px 0 30px;
+  }
+  .btn {
+    display: inline-block;
+    font-family: 'Martian Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fffaf1;
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    padding: 14px 28px;
+    cursor: pointer;
+  }
+  .btn:active { transform: scale(0.98); }
+  .privacy-note {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 300px;
+    margin-top: 22px;
+  }
+  #errorBox {
+    display: none;
+    font-size: 12px;
+    color: var(--accent);
+    max-width: 300px;
+    line-height: 1.6;
+    margin-top: 18px;
+  }
+  #errorBox.show { display: block; }
+
+  /* ---- AR view ---- */
+  #arView { position: fixed; inset: 0; display: none; }
+  #arView.show { display: block; }
+  video { display: none; }
+  canvas#stage {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+  }
+
+  #hint {
+    position: absolute;
+    left: 50%;
+    bottom: 110px;
+    transform: translateX(-50%);
+    background: rgba(58,31,26,0.55);
+    color: #fffaf1;
+    font-size: 12px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+  }
+  #hint.show { opacity: 1; }
+
+  #captionBar {
+    position: absolute;
+    top: max(16px, env(safe-area-inset-top));
+    left: 16px;
+    right: 16px;
+    background: rgba(255,250,241,0.9);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink);
+    z-index: 5;
+  }
+  #captionBar .from { color: var(--accent); font-weight: 700; }
+
+  #bottomBar {
+    position: absolute;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 5;
+  }
+  #captureBtn {
+    background: #fffaf1;
+    color: var(--ink);
+    border: none;
+    border-radius: 999px;
+    padding: 14px 26px;
+    font-family: 'Martian Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  }
+
+  #flash {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 30;
+  }
+  #flash.on { opacity: 0.8; transition: opacity 0.08s ease; }
+  #flash.off { opacity: 0; transition: opacity 0.5s ease; }
+
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--muted);
+    z-index: 25;
+  }
+  #loading.show { display: flex; }
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <div class="eyebrow">Raksha Bandhan</div>
+  <img id="introImg" src="" alt="Your Rakhi">
+  <h1>A Rakhi for you</h1>
+  <div id="fromLine"></div>
+  <div id="noteLine"></div>
+  <button class="btn" id="startBtn">Open camera</button>
+  <div class="privacy-note">This runs entirely on your phone. Your camera feed is never uploaded, recorded, or sent anywhere.</div>
+  <div id="errorBox"></div>
+</div>
+
+<div id="loading">Loading camera…</div>
+
+<div id="arView">
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="stage"></canvas>
+  <div id="captionBar" style="display:none;"></div>
+  <div id="hint">Point your camera at your wrist ✨</div>
+  <div id="bottomBar" style="display:none;">
+    <button id="captureBtn">Save this moment</button>
+  </div>
+</div>
+
+<div id="flash"></div>
+
+<script>
+  const DESIGNS = {
+    classic: { file: 'assets/rakhi-classic.svg', label: 'Classic Red & Gold' },
+    minimal: { file: 'assets/rakhi-minimal.svg', label: 'Minimal Blush' },
+    floral:  { file: 'assets/rakhi-floral.svg', label: 'Floral Green & Gold' }
+  };
+
+  const params = new URLSearchParams(window.location.search);
+  const designId = DESIGNS[params.get('d')] ? params.get('d') : 'classic';
+  const design = DESIGNS[designId];
+  const fromName = (params.get('n') || '').slice(0, 40);
+  const note = (params.get('m') || '').slice(0, 140);
+
+  document.getElementById('introImg').src = design.file;
+  document.getElementById('fromLine').textContent = fromName ? ('from ' + fromName) : '';
+  document.getElementById('noteLine').textContent = note;
+
+  if (fromName || note) {
+    const cap = document.getElementById('captionBar');
+    cap.innerHTML = (fromName ? '<span class="from">' + fromName + '</span><br>' : '') + note;
+  }
+
+  const startBtn = document.getElementById('startBtn');
+  const errorBox = document.getElementById('errorBox');
+  const loading = document.getElementById('loading');
+  const intro = document.getElementById('intro');
+  const arView = document.getElementById('arView');
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  const hint = document.getElementById('hint');
+  const captionBar = document.getElementById('captionBar');
+  const bottomBar = document.getElementById('bottomBar');
+  const captureBtn = document.getElementById('captureBtn');
+  const flash = document.getElementById('flash');
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.classList.add('show');
+    loading.classList.remove('show');
+  }
+
+  const rakhiImg = new Image();
+  rakhiImg.src = design.file;
+
+  let handLandmarker = null;
+  let lastVideoTime = -1;
+  let lastSeenAt = 0;
+
+  async function loadModel() {
+    const { HandLandmarker, FilesetResolver } = await import(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14'
+    );
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+    );
+    const modelUrl = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+    try {
+      return await HandLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: modelUrl, delegate: 'GPU' },
+        runningMode: 'VIDEO',
+        numHands: 1
+      });
+    } catch (e) {
+      return await HandLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: modelUrl, delegate: 'CPU' },
+        runningMode: 'VIDEO',
+        numHands: 1
+      });
+    }
+  }
+
+  async function start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showError('This browser can\'t access the camera. Try opening this link on your phone in Chrome or Safari.');
+      return;
+    }
+    loading.classList.add('show');
+    errorBox.classList.remove('show');
+    try {
+      const [stream, model] = await Promise.all([
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        }),
+        handLandmarker ? Promise.resolve(handLandmarker) : loadModel()
+      ]);
+      handLandmarker = model;
+      video.srcObject = stream;
+      await video.play();
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      intro.style.display = 'none';
+      loading.classList.remove('show');
+      arView.classList.add('show');
+      if (fromName || note) captionBar.style.display = 'block';
+      bottomBar.style.display = 'flex';
+
+      requestAnimationFrame(loop);
+    } catch (err) {
+      let msg = 'Couldn\'t open the camera. ';
+      if (err.name === 'NotAllowedError') msg += 'Camera permission was denied — allow camera access and try again.';
+      else if (err.name === 'NotFoundError') msg += 'No camera was found on this device.';
+      else msg += 'Please try again.';
+      showError(msg);
+    }
+  }
+
+  function loop() {
+    requestAnimationFrame(loop);
+    if (video.readyState < 2) return;
+    if (video.currentTime === lastVideoTime) {
+      drawFrame(null);
+      return;
+    }
+    lastVideoTime = video.currentTime;
+    const result = handLandmarker.detectForVideo(video, performance.now());
+    drawFrame(result && result.landmarks && result.landmarks[0] ? result.landmarks[0] : null);
+  }
+
+  function drawFrame(landmarks) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    if (landmarks) {
+      lastSeenAt = performance.now();
+      hint.classList.remove('show');
+      drawRakhi(landmarks);
+    } else if (performance.now() - lastSeenAt > 900) {
+      hint.classList.add('show');
+    }
+  }
+
+  function drawRakhi(landmarks) {
+    if (!rakhiImg.complete || rakhiImg.naturalWidth === 0) return;
+
+    const w = canvas.width, h = canvas.height;
+    const wrist = { x: landmarks[0].x * w, y: landmarks[0].y * h };
+    const midMcp = { x: landmarks[9].x * w, y: landmarks[9].y * h };
+    const indexMcp = { x: landmarks[5].x * w, y: landmarks[5].y * h };
+    const pinkyMcp = { x: landmarks[17].x * w, y: landmarks[17].y * h };
+
+    // direction pointing from the hand out along the forearm
+    const dx = wrist.x - midMcp.x;
+    const dy = wrist.y - midMcp.y;
+    const forearmLen = Math.hypot(dx, dy) || 1;
+    const dirX = dx / forearmLen, dirY = dy / forearmLen;
+
+    // hand span defines how wide the band should be
+    const span = Math.hypot(pinkyMcp.x - indexMcp.x, pinkyMcp.y - indexMcp.y);
+    const bandWidth = Math.max(span * 2.1, 60);
+    const bandHeight = bandWidth * (rakhiImg.naturalHeight / rakhiImg.naturalWidth);
+
+    // anchor point sits a bit past the wrist, onto the forearm
+    const anchorX = wrist.x + dirX * forearmLen * 0.45;
+    const anchorY = wrist.y + dirY * forearmLen * 0.45;
+
+    const angle = Math.atan2(dirY, dirX) + Math.PI / 2;
+
+    ctx.save();
+    ctx.translate(anchorX, anchorY);
+    ctx.rotate(angle);
+    ctx.globalAlpha = 0.96;
+    ctx.drawImage(rakhiImg, -bandWidth / 2, -bandHeight / 2, bandWidth, bandHeight);
+    ctx.restore();
+  }
+
+  captureBtn.addEventListener('click', () => {
+    flash.classList.add('on');
+    setTimeout(() => { flash.classList.remove('on'); flash.classList.add('off'); }, 90);
+
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'ar-rakhi.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'My AR Rakhi' });
+          return;
+        } catch (e) { /* user cancelled — fall through to download */ }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ar-rakhi.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, 'image/png');
+  });
+
+  startBtn.addEventListener('click', start);
+</script>
+</body>
+</html>
