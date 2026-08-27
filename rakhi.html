@@ -3,21 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-<title>A Rakhi for you</title>
-<meta property="og:title" content="A Rakhi for you">
-<meta property="og:description" content="Open on your phone and point the camera at your wrist.">
+<title>dhaaga — A Rakhi for you</title>
+<meta property="og:title" content="dhaaga — A Rakhi for you">
+<meta property="og:description" content="Happy Raksha Bandhan! Open on your phone and point the camera at your wrist — it ties itself on, live.">
+<meta property="og:image" content="assets/og-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&family=Yatra+One&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #fbf3e7;
+    --bg: #fdf2da;
     --card: #fffaf1;
     --ink: #3a1f1a;
     --accent: #c73b2b;
     --gold: #cf9d3f;
     --muted: #8a7062;
     --line: #ecdcc4;
+    --dhaaga-teal: #4f8fa8;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -35,13 +37,58 @@
     position: fixed;
     inset: 0;
     background: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 32px 24px;
+    padding: max(16px, env(safe-area-inset-top)) 24px 20px;
+    overflow-y: auto;
     z-index: 20;
+  }
+  .dhaaga-logo {
+    font-family: 'Yatra One', cursive;
+    font-size: 17px;
+    color: var(--dhaaga-teal);
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+  .dhaaga-logo .flourish { font-size: 9px; opacity: 0.75; }
+
+  .arch-hero {
+    position: relative;
+    width: 178px;
+    max-width: 50vw;
+    aspect-ratio: 3 / 4;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+  .arch-hero svg { width: 100%; height: 100%; display: block; }
+  .arch-hero .arch-heading {
+    position: absolute;
+    top: 14%;
+    left: 8%;
+    right: 8%;
+    color: #fffaf1;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    text-shadow: 0 2px 8px rgba(58,31,26,0.25);
+  }
+  #introImg {
+    position: absolute;
+    left: 50%;
+    bottom: 14%;
+    transform: translateX(-50%);
+    width: 62%;
+    height: auto;
+    filter: drop-shadow(0 6px 12px rgba(58,31,26,0.2));
   }
   .eyebrow {
     font-size: 11px;
@@ -49,13 +96,6 @@
     color: var(--accent);
     text-transform: uppercase;
     margin-bottom: 14px;
-  }
-  #introImg {
-    width: 220px;
-    max-width: 70vw;
-    height: auto;
-    margin-bottom: 18px;
-    filter: drop-shadow(0 6px 14px rgba(58,31,26,0.12));
   }
   h1 {
     font-size: 19px;
@@ -73,7 +113,7 @@
     color: var(--ink);
     line-height: 1.6;
     max-width: 360px;
-    margin: 12px 0 30px;
+    margin: 10px 0 20px;
   }
   .btn {
     display: inline-block;
@@ -253,6 +293,34 @@
   }
   #captionBar .from { color: #f7d878; font-weight: 700; }
 
+  /* subtle golden sparkles around the festive heading, once the Rakhi is placed */
+  .sparkles {
+    position: absolute;
+    top: max(14px, env(safe-area-inset-top));
+    left: 0;
+    right: 0;
+    height: 40px;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .sparkles .spark {
+    position: absolute;
+    top: 50%;
+    color: #f2c14e;
+    font-size: 12px;
+    opacity: 0;
+    text-shadow: 0 0 6px rgba(242,193,78,0.7);
+  }
+  .sparkles.show .spark { animation: twinkle 2.6s ease-in-out infinite; }
+  .sparkles .spark:nth-child(1) { left: 14%; animation-delay: 0.1s; }
+  .sparkles .spark:nth-child(2) { left: 27%; top: 20%; animation-delay: 0.9s; }
+  .sparkles .spark:nth-child(3) { right: 27%; top: 20%; animation-delay: 1.5s; }
+  .sparkles .spark:nth-child(4) { right: 14%; animation-delay: 0.5s; }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(0.6); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
   #bottomBar {
     position: absolute;
     bottom: max(24px, env(safe-area-inset-bottom));
@@ -260,19 +328,24 @@
     right: 0;
     display: flex;
     justify-content: center;
+    gap: 10px;
     z-index: 5;
   }
-  #captureBtn {
+  #captureBtn, #replayBtn {
     background: #fffaf1;
     color: var(--ink);
     border: none;
     border-radius: 999px;
-    padding: 14px 26px;
+    padding: 14px 22px;
     font-family: 'Martian Mono', monospace;
     font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  }
+  #replayBtn {
+    background: rgba(58,31,26,0.55);
+    color: #fffaf1;
   }
 
   #flash {
@@ -303,8 +376,22 @@
 <body>
 
 <div id="intro">
-  <div class="eyebrow">Raksha Bandhan</div>
-  <img id="introImg" src="" alt="Your Rakhi">
+  <div class="dhaaga-logo"><span class="flourish">—•</span>dhaaga<span class="flourish">•—</span></div>
+
+  <div class="arch-hero">
+    <svg viewBox="0 0 240 320">
+      <defs>
+        <linearGradient id="archGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f2c14e"/>
+          <stop offset="100%" stop-color="#c73b2b"/>
+        </linearGradient>
+      </defs>
+      <path d="M120 10 C108 28,95 34,100 55 C78 60,50 78,45 110 C35 125,30 145,30 170 L30 300 C30 311,39 320,50 320 L190 320 C201 320,210 311,210 300 L210 170 C210 145,205 125,195 110 C190 78,162 60,140 55 C145 34,132 28,120 10 Z" fill="url(#archGrad)"/>
+    </svg>
+    <div class="arch-heading">Happy Rakshabandhan</div>
+    <img id="introImg" src="" alt="Your Rakhi">
+  </div>
+
   <h1>A Rakhi for you</h1>
   <div id="fromLine"></div>
   <div id="noteLine"></div>
@@ -331,6 +418,9 @@
   </svg>
 
   <div id="festiveHeading">✨ Happy Raksha Bandhan ✨</div>
+  <div class="sparkles" id="sparkles">
+    <span class="spark">✦</span><span class="spark">✧</span><span class="spark">✧</span><span class="spark">✦</span>
+  </div>
   <div id="captionBar" style="display:none;"></div>
 
   <div id="scanFrame">
@@ -345,6 +435,7 @@
   <div id="adjustHint">Drag to move · pinch to resize</div>
   <div id="bottomBar" style="display:none;">
     <button id="captureBtn">Save this moment</button>
+    <button id="replayBtn">Replay ↻</button>
   </div>
 </div>
 
@@ -377,19 +468,29 @@
     }
   };
 
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   const params = new URLSearchParams(window.location.search);
   const designId = DESIGNS[params.get('d')] ? params.get('d') : 'floral';
   const design = DESIGNS[designId];
+  const toName = (params.get('t') || '').slice(0, 40);
   const fromName = (params.get('n') || '').slice(0, 40);
   const note = (params.get('m') || '').slice(0, 140);
 
   document.getElementById('introImg').src = design.file;
-  document.getElementById('fromLine').textContent = fromName ? ('from ' + fromName) : '';
-  document.getElementById('noteLine').textContent = note;
+  document.getElementById('fromLine').textContent = toName ? ('To ' + toName) : '';
+  document.getElementById('noteLine').innerHTML = escapeHtml(note)
+    + (fromName ? '<br><span style="opacity:.65">— ' + escapeHtml(fromName) + '</span>' : '');
 
-  if (fromName || note) {
+  if (toName || fromName || note) {
     const cap = document.getElementById('captionBar');
-    cap.innerHTML = (fromName ? '<span class="from">' + fromName + '</span><br>' : '') + note;
+    let html = '';
+    if (toName) html += '<span class="from">To ' + escapeHtml(toName) + '</span><br>';
+    if (note) html += escapeHtml(note);
+    if (fromName) html += '<br><span style="opacity:.75">— ' + escapeHtml(fromName) + '</span>';
+    cap.innerHTML = html;
   }
 
   const startBtn = document.getElementById('startBtn');
@@ -404,10 +505,12 @@
   const captionBar = document.getElementById('captionBar');
   const bottomBar = document.getElementById('bottomBar');
   const captureBtn = document.getElementById('captureBtn');
+  const replayBtn = document.getElementById('replayBtn');
   const flash = document.getElementById('flash');
   const scanFrame = document.getElementById('scanFrame');
   const scanFrameText = document.getElementById('scanFrameText');
   const adjustHint = document.getElementById('adjustHint');
+  const sparkles = document.getElementById('sparkles');
 
   function showError(msg) {
     errorBox.textContent = msg;
@@ -458,8 +561,9 @@
   let adjustHintShown = false;
 
   function revealChrome() {
-    if (fromName || note) captionBar.style.display = 'block';
+    if (toName || fromName || note) captionBar.style.display = 'block';
     bottomBar.style.display = 'flex';
+    sparkles.classList.add('show');
   }
 
   function inFrame(landmarks) {
@@ -783,6 +887,12 @@
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     }, 'image/png');
+  });
+
+  replayBtn.addEventListener('click', () => {
+    if (arState !== 'steady' || !smooth) return;
+    arState = 'tying';
+    tyingStartAt = performance.now();
   });
 
   startBtn.addEventListener('click', start);
