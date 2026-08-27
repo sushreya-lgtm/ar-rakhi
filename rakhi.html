@@ -812,18 +812,42 @@
   function touchDist(a, b) {
     return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
   }
+  // the canvas covers the full screen, so incidental contact (a thumb resting on the edge
+  // while holding the phone) must NOT be able to grab-and-pin the Rakhi — only a touch that
+  // actually starts near its current on-screen position may begin a drag
+  function clientToCanvasPoint(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const s = cssToCanvasScale();
+    const offsetX = (rect.width - canvas.width / s) / 2;
+    const offsetY = (rect.height - canvas.height / s) / 2;
+    return { x: (clientX - rect.left - offsetX) * s, y: (clientY - rect.top - offsetY) * s };
+  }
+  function nearRakhi(canvasX, canvasY) {
+    if (!smooth) return false;
+    const rx = smooth.x + manualOffset.x, ry = smooth.y + manualOffset.y;
+    const radius = Math.max(smooth.width, smooth.height) * 0.8 + 50;
+    return Math.hypot(canvasX - rx, canvasY - ry) <= radius;
+  }
 
   canvas.addEventListener('touchstart', (e) => {
     if (arState !== 'steady') return;
     if (e.touches.length === 1) {
+      const p = clientToCanvasPoint(e.touches[0].clientX, e.touches[0].clientY);
+      if (!nearRakhi(p.x, p.y)) return; // not touching the Rakhi — ignore, let it pass through
       touchMode = 'drag';
       dragLast = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      e.preventDefault();
     } else if (e.touches.length === 2) {
+      const mid = clientToCanvasPoint(
+        (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        (e.touches[0].clientY + e.touches[1].clientY) / 2
+      );
+      if (!nearRakhi(mid.x, mid.y)) return;
       touchMode = 'pinch';
       pinchStartDist = touchDist(e.touches[0], e.touches[1]);
       pinchStartScale = manualScale;
+      e.preventDefault();
     }
-    e.preventDefault();
   }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
