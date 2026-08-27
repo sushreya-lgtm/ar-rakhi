@@ -269,10 +269,51 @@
 
   const rakhiImg = new Image();
   rakhiImg.src = design.file;
+  const tyingHandImg = new Image();
+  tyingHandImg.src = 'assets/tying-hand.svg';
 
   let handLandmarker = null;
   let lastVideoTime = -1;
+
+  // --- tracking smoothing + presence state ---
+  const SMOOTH_ALPHA = 0.35;   // higher = snappier/more jittery, lower = smoother/more lag
+  const GRACE_MS = 350;        // keep drawing at the last known spot through brief tracking dropouts
+  const HINT_MS = 900;         // show the "point at your wrist" hint after this much continuous loss
+  const SUSTAIN_MS = 350;      // require this much continuous detection before starting the tie-in
+
+  let smooth = null;           // { x, y, angle, width, height } — smoothed wrist transform
+  let lastLandmarks = null;
+  let lastHandedLabel = null;
   let lastSeenAt = 0;
+  let presenceStartedAt = null;
+
+  // --- tie-in animation state ---
+  const SIDE_FLIPPED = false;  // flip if the entry side reads backwards in testing
+  const ENTER_MS = 550, HOLD_MS = 280, EXIT_MS = 480;
+  const TYING_TOTAL_MS = ENTER_MS + HOLD_MS + EXIT_MS;
+  let arState = 'idle';        // 'idle' -> 'tying' -> 'steady'
+  let tyingStartAt = null;
+  let tyingSide = 'left';
+
+  function revealChrome() {
+    if (fromName || note) captionBar.style.display = 'block';
+    bottomBar.style.display = 'flex';
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function lerpAngle(a, b, t) {
+    const diff = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    return a + diff * t;
+  }
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+  function deriveSide(handedLabel) {
+    // MediaPipe's handedness is read directly off the (unmirrored, rear-camera) frame.
+    let side = handedLabel === 'Left' ? 'right' : 'left';
+    if (SIDE_FLIPPED) side = side === 'left' ? 'right' : 'left';
+    return side;
+  }
 
   async function loadModel() {
     const { HandLandmarker, FilesetResolver } = await import(
@@ -321,8 +362,8 @@
       intro.style.display = 'none';
       loading.classList.remove('show');
       arView.classList.add('show');
-      if (fromName || note) captionBar.style.display = 'block';
-      bottomBar.style.display = 'flex';
+      // safety fallback: if a hand is never detected, still surface the capture button
+      setTimeout(revealChrome, 6000);
 
       requestAnimationFrame(loop);
     } catch (err) {
@@ -337,30 +378,60 @@
   function loop() {
     requestAnimationFrame(loop);
     if (video.readyState < 2) return;
-    if (video.currentTime === lastVideoTime) {
-      drawFrame(null);
-      return;
+
+    if (video.currentTime !== lastVideoTime) {
+      lastVideoTime = video.currentTime;
+      const result = handLandmarker.detectForVideo(video, performance.now());
+      const landmarks = result && result.landmarks && result.landmarks[0] ? result.landmarks[0] : null;
+
+      if (landmarks) {
+        lastLandmarks = landmarks;
+        lastSeenAt = performance.now();
+        if (presenceStartedAt === null) presenceStartedAt = lastSeenAt;
+
+        const handedArr = (result.handednesses && result.handednesses[0])
+          || (result.handedness && result.handedness[0]) || null;
+        const label = handedArr && handedArr[0] && (handedArr[0].categoryName || handedArr[0].display_name);
+        if (label) lastHandedLabel = label;
+      }
+      // a miss doesn't clear lastLandmarks immediately — render() decides via the grace window,
+      // so a single dropped frame doesn't make the Rakhi flicker off
     }
-    lastVideoTime = video.currentTime;
-    const result = handLandmarker.detectForVideo(video, performance.now());
-    drawFrame(result && result.landmarks && result.landmarks[0] ? result.landmarks[0] : null);
+
+    render();
   }
 
-  function drawFrame(landmarks) {
+  function render() {
+    const now = performance.now();
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    if (landmarks) {
-      lastSeenAt = performance.now();
+    const sinceSeen = now - lastSeenAt;
+    const present = lastLandmarks && sinceSeen <= GRACE_MS;
+
+    if (present) {
       hint.classList.remove('show');
-      drawRakhi(landmarks);
-    } else if (performance.now() - lastSeenAt > 900) {
-      hint.classList.add('show');
+      smoothToward(computeTransform(lastLandmarks));
+
+      if (arState === 'idle' && presenceStartedAt && (now - presenceStartedAt > SUSTAIN_MS)) {
+        arState = 'tying';
+        tyingStartAt = now;
+        tyingSide = deriveSide(lastHandedLabel);
+      }
+    } else {
+      presenceStartedAt = null;
+      if (sinceSeen > HINT_MS) hint.classList.add('show');
+    }
+
+    if (!smooth) return;
+
+    if (arState === 'tying') {
+      drawTyingAnimation(now);
+    } else if (arState === 'steady') {
+      drawRakhiAt(smooth, 1);
     }
   }
 
-  function drawRakhi(landmarks) {
-    if (!rakhiImg.complete || rakhiImg.naturalWidth === 0) return;
-
+  function computeTransform(landmarks) {
     const w = canvas.width, h = canvas.height;
     const wrist = { x: landmarks[0].x * w, y: landmarks[0].y * h };
     const midMcp = { x: landmarks[9].x * w, y: landmarks[9].y * h };
@@ -381,15 +452,83 @@
     // anchor point sits a bit past the wrist, onto the forearm
     const anchorX = wrist.x + dirX * forearmLen * 0.45;
     const anchorY = wrist.y + dirY * forearmLen * 0.45;
-
     const angle = Math.atan2(dirY, dirX) + Math.PI / 2;
 
+    return { x: anchorX, y: anchorY, angle, width: bandWidth, height: bandHeight };
+  }
+
+  function smoothToward(target) {
+    if (!smooth) { smooth = { ...target }; return; }
+    const a = SMOOTH_ALPHA;
+    smooth.x += (target.x - smooth.x) * a;
+    smooth.y += (target.y - smooth.y) * a;
+    smooth.width += (target.width - smooth.width) * a;
+    smooth.height += (target.height - smooth.height) * a;
+    smooth.angle = lerpAngle(smooth.angle, target.angle, a);
+  }
+
+  function drawRakhiAt(t, alpha) {
+    if (!rakhiImg.complete || rakhiImg.naturalWidth === 0 || alpha <= 0) return;
     ctx.save();
-    ctx.translate(anchorX, anchorY);
-    ctx.rotate(angle);
-    ctx.globalAlpha = 0.96;
-    ctx.drawImage(rakhiImg, -bandWidth / 2, -bandHeight / 2, bandWidth, bandHeight);
+    ctx.translate(t.x, t.y);
+    ctx.rotate(t.angle);
+    ctx.globalAlpha = 0.96 * alpha;
+    ctx.drawImage(rakhiImg, -t.width / 2, -t.height / 2, t.width, t.height);
     ctx.restore();
+  }
+
+  function drawTyingHandAt(point, handW, handH, mirrored, alpha) {
+    if (!tyingHandImg.complete || tyingHandImg.naturalWidth === 0 || alpha <= 0) return;
+    const fx = 0.987, fy = 0.478; // thread-end position as a fraction of the source illustration
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(point.x, point.y);
+    if (mirrored) ctx.scale(-1, 1);
+    ctx.drawImage(tyingHandImg, -fx * handW, -fy * handH, handW, handH);
+    ctx.restore();
+  }
+
+  function drawTyingAnimation(now) {
+    const t = now - tyingStartAt;
+    if (t >= TYING_TOTAL_MS) {
+      arState = 'steady';
+      revealChrome();
+      drawRakhiAt(smooth, 1);
+      return;
+    }
+
+    const w = canvas.width, h = canvas.height;
+    const anchorPoint = { x: smooth.x, y: smooth.y };
+    const handW = Math.max(smooth.width * 2.6, 220);
+    const handH = handW * (tyingHandImg.naturalHeight / tyingHandImg.naturalWidth);
+    const mirrored = tyingSide === 'right';
+    // diagonal off-screen start, per the "not a flat horizontal reach" note
+    const startPoint = {
+      x: tyingSide === 'left' ? -handW * 0.7 : w + handW * 0.7,
+      y: anchorPoint.y + h * 0.22
+    };
+
+    let handPoint, rakhiAlpha, handAlpha;
+
+    if (t < ENTER_MS) {
+      const p = easeInOutCubic(t / ENTER_MS);
+      handPoint = { x: lerp(startPoint.x, anchorPoint.x, p), y: lerp(startPoint.y, anchorPoint.y, p) };
+      rakhiAlpha = 0;
+      handAlpha = Math.min(1, t / 150);
+    } else if (t < ENTER_MS + HOLD_MS) {
+      const p = (t - ENTER_MS) / HOLD_MS;
+      handPoint = anchorPoint;
+      rakhiAlpha = p;
+      handAlpha = 1;
+    } else {
+      const p = easeInOutCubic((t - ENTER_MS - HOLD_MS) / EXIT_MS);
+      handPoint = { x: lerp(anchorPoint.x, startPoint.x, p), y: lerp(anchorPoint.y, startPoint.y, p) };
+      rakhiAlpha = 1;
+      handAlpha = 1 - p;
+    }
+
+    drawRakhiAt(smooth, rakhiAlpha);
+    drawTyingHandAt(handPoint, handW, handH, mirrored, handAlpha);
   }
 
   captureBtn.addEventListener('click', () => {
