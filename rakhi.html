@@ -688,17 +688,23 @@
     ctx.restore();
   }
 
-  // draws one v2 piece (hand or string) at its exact offset from the Rakhi's anchor, scaled
-  // to match the live-tracked size, rotated with the wrist, with an extra local-x slide applied
-  // for the enter/exit travel — extraShiftX is in the SAME rotated space as dx/dy, so the slide
-  // direction stays "sideways relative to the wrist" even when the wrist is tilted
-  function drawPiece(layout, img, anchor, scale, rotation, extraShiftX, alpha) {
+  // draws one v2 piece (hand or string). Its DOCKED position rotates with the wrist (so it
+  // lines up with the Rakhi once arrived), but worldShiftX is a plain horizontal offset applied
+  // in screen space, AFTER that rotation — so the enter/exit travel is always a fixed straight
+  // line from the edge, never diagonal, regardless of how tilted the wrist is.
+  function drawPiece(layout, img, anchor, scale, rotation, worldShiftX, alpha) {
     if (!img.complete || img.naturalWidth === 0 || alpha <= 0) return;
+    const w = layout.w * scale, h = layout.h * scale;
+    const dx = layout.dx * scale, dy = layout.dy * scale;
+    const cos = Math.cos(rotation), sin = Math.sin(rotation);
+    const dockedX = anchor.x + dx * cos - dy * sin;
+    const dockedY = anchor.y + dx * sin + dy * cos;
+
     ctx.save();
-    ctx.translate(anchor.x, anchor.y);
+    ctx.translate(dockedX + worldShiftX, dockedY);
     ctx.rotate(rotation);
     ctx.globalAlpha = alpha;
-    ctx.drawImage(img, layout.dx * scale + extraShiftX, layout.dy * scale, layout.w * scale, layout.h * scale);
+    ctx.drawImage(img, 0, 0, w, h);
     ctx.restore();
   }
 
@@ -869,11 +875,14 @@
       document.getElementById('tasselLeft').classList.add('show');
       document.getElementById('tasselRight').classList.add('show');
 
+      // ?tilt=1 fabricates a tilted wrist, to sanity-check that the enter/exit travel path
+      // stays a fixed straight line even when the docked rotation isn't level
+      const tilt = location.search.includes('tilt=1');
       const fake = Array.from({ length: 21 }, () => ({ x: 0.5, y: 0.5, z: 0 }));
-      fake[0] = { x: 0.5, y: 0.58, z: 0 };
-      fake[9] = { x: 0.5, y: 0.42, z: 0 };
-      fake[5] = { x: 0.44, y: 0.44, z: 0 };
-      fake[17] = { x: 0.56, y: 0.44, z: 0 };
+      fake[0] = { x: tilt ? 0.6 : 0.5, y: 0.58, z: 0 };
+      fake[9] = { x: tilt ? 0.42 : 0.5, y: 0.42, z: 0 };
+      fake[5] = { x: tilt ? 0.36 : 0.44, y: 0.46, z: 0 };
+      fake[17] = { x: tilt ? 0.48 : 0.56, y: 0.42, z: 0 };
       lastLandmarks = fake;
       lastSeenAt = performance.now();
       arState = 'tying';
