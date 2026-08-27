@@ -66,29 +66,36 @@
 
   .gallery {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
     margin-bottom: 36px;
   }
   .rakhi-card {
     background: var(--card);
     border: 1.5px solid var(--line);
-    border-radius: 10px;
-    padding: 10px 8px 12px;
+    border-radius: 12px;
+    padding: 16px 10px 14px;
     cursor: pointer;
     transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     -webkit-tap-highlight-color: transparent;
   }
   .rakhi-card img {
     width: 100%;
-    height: auto;
+    height: 84px;
+    object-fit: contain;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
   }
   .rakhi-card .name {
-    font-size: 10px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 700;
     letter-spacing: 0.02em;
+  }
+  .rakhi-card .desc {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 4px;
   }
   .rakhi-card:hover {
     transform: translateY(-2px);
@@ -213,17 +220,15 @@
 
   <div class="step-label">1. Pick a Rakhi</div>
   <div class="gallery" id="gallery">
-    <div class="rakhi-card" data-id="classic" data-name="Classic Red &amp; Gold">
-      <img src="assets/rakhi-classic.svg" alt="Classic red and gold Rakhi">
-      <div class="name">Classic</div>
+    <div class="rakhi-card" data-id="floral" data-name="Floral &amp; Radiant">
+      <img src="assets/rakhi-floral-v2.png" alt="Floral & Radiant Rakhi">
+      <div class="name">Floral &amp; Radiant</div>
+      <div class="desc">Warm, blooming, traditional</div>
     </div>
-    <div class="rakhi-card" data-id="minimal" data-name="Minimal Blush">
-      <img src="assets/rakhi-minimal.svg" alt="Minimal blush Rakhi">
-      <div class="name">Minimal</div>
-    </div>
-    <div class="rakhi-card" data-id="floral" data-name="Floral Green &amp; Gold">
-      <img src="assets/rakhi-floral.svg" alt="Floral green and gold Rakhi">
-      <div class="name">Floral</div>
+    <div class="rakhi-card" data-id="evileye" data-name="Bold &amp; Sleek Evil Eye">
+      <img src="assets/rakhi-evileye-v2.png" alt="Bold & Sleek Evil Eye Rakhi">
+      <div class="name">Bold &amp; Sleek Evil Eye</div>
+      <div class="desc">Exciting, modern, protective</div>
     </div>
   </div>
 

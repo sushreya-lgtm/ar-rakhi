@@ -351,14 +351,34 @@
 <div id="flash"></div>
 
 <script>
+  // v2 pipeline: real illustrated hand+string carries the Rakhi in from both sides at once.
+  // dx/dy/w/h come directly from the shared 2100x1500 Photoshop canvas Sushreya exported from —
+  // all pieces share that coordinate space, so these offsets are exact, not eyeballed. The base
+  // + hand + string art is shared across designs; only the top charm (and so the composite's own
+  // center, hence these per-design offsets) changes.
   const DESIGNS = {
-    classic: { file: 'assets/rakhi-classic.svg', label: 'Classic Red & Gold' },
-    minimal: { file: 'assets/rakhi-minimal.svg', label: 'Minimal Blush' },
-    floral:  { file: 'assets/rakhi-floral.svg', label: 'Floral Green & Gold' }
+    floral: {
+      label: 'Floral & Radiant',
+      file: 'assets/rakhi-floral-v2.png',
+      compositeW: 307, compositeH: 225,
+      handLeft:    { dx: -496.5, dy: -89.5, w: 332, h: 321 },
+      handRight:   { dx: 159.5,  dy: -88.5, w: 341, h: 320 },
+      stringLeft:  { dx: -356.5, dy: -35.5, w: 272, h: 92 },
+      stringRight: { dx: 92.5,   dy: -31.5, w: 287, h: 90 }
+    },
+    evileye: {
+      label: 'Bold & Sleek Evil Eye',
+      file: 'assets/rakhi-evileye-v2.png',
+      compositeW: 307, compositeH: 76,
+      handLeft:    { dx: -496.5, dy: -95.0, w: 332, h: 321 },
+      handRight:   { dx: 159.5,  dy: -94.0, w: 341, h: 320 },
+      stringLeft:  { dx: -356.5, dy: -41.0, w: 272, h: 92 },
+      stringRight: { dx: 92.5,   dy: -37.0, w: 287, h: 90 }
+    }
   };
 
   const params = new URLSearchParams(window.location.search);
-  const designId = DESIGNS[params.get('d')] ? params.get('d') : 'classic';
+  const designId = DESIGNS[params.get('d')] ? params.get('d') : 'floral';
   const design = DESIGNS[designId];
   const fromName = (params.get('n') || '').slice(0, 40);
   const note = (params.get('m') || '').slice(0, 140);
@@ -395,23 +415,13 @@
     loading.classList.remove('show');
   }
 
-  // v2 pipeline: real illustrated hand+string carries the Rakhi in from both sides at once.
-  // dx/dy/w/h come directly from the shared 2100x1500 Photoshop canvas Sushreya exported from —
-  // all pieces share that coordinate space, so these offsets are exact, not eyeballed.
-  const RAKHI_LAYOUT = {
-    compositeW: 307, compositeH: 225, // rakhi-floral-v2.png's own pixel size
-    handLeft:    { file: 'assets/hand-left.png',    dx: -496.5, dy: -89.5, w: 332, h: 321 },
-    handRight:   { file: 'assets/hand-right.png',   dx: 159.5,  dy: -88.5, w: 341, h: 320 },
-    stringLeft:  { file: 'assets/string-left.png',  dx: -356.5, dy: -35.5, w: 272, h: 92 },
-    stringRight: { file: 'assets/string-right.png', dx: 92.5,   dy: -31.5, w: 287, h: 90 }
-  };
-
   const rakhiImg = new Image();
-  rakhiImg.src = 'assets/rakhi-floral-v2.png'; // TODO: reconnect to the ?d= picker once the animation is approved
-  const handLeftImg = new Image();  handLeftImg.src = RAKHI_LAYOUT.handLeft.file;
-  const handRightImg = new Image(); handRightImg.src = RAKHI_LAYOUT.handRight.file;
-  const stringLeftImg = new Image();  stringLeftImg.src = RAKHI_LAYOUT.stringLeft.file;
-  const stringRightImg = new Image(); stringRightImg.src = RAKHI_LAYOUT.stringRight.file;
+  rakhiImg.src = design.file;
+  // hand/string art is shared across every design, so these load once regardless of ?d=
+  const handLeftImg = new Image();    handLeftImg.src = 'assets/hand-left.png';
+  const handRightImg = new Image();   handRightImg.src = 'assets/hand-right.png';
+  const stringLeftImg = new Image();  stringLeftImg.src = 'assets/string-left.png';
+  const stringRightImg = new Image(); stringRightImg.src = 'assets/string-right.png';
 
   let handLandmarker = null;
   let lastVideoTime = -1;
@@ -746,7 +756,7 @@
     // the wrist keeps being tracked live throughout, so both hands always converge on
     // wherever it currently is rather than a point captured back at animation start
     const anchor = { x: smooth.x, y: smooth.y };
-    const scale = smooth.width / RAKHI_LAYOUT.compositeW;
+    const scale = smooth.width / design.compositeW;
     const rotation = smooth.angle;
     const offscreen = Math.max(canvas.width, canvas.height) * 0.9;
 
@@ -777,10 +787,10 @@
     }
 
     drawRakhiAt(smooth, rakhiAlpha);
-    drawPiece(RAKHI_LAYOUT.stringLeft, stringLeftImg, anchor, scale, rotation, -shift, stringAlpha);
-    drawPiece(RAKHI_LAYOUT.stringRight, stringRightImg, anchor, scale, rotation, shift, stringAlpha);
-    drawPiece(RAKHI_LAYOUT.handLeft, handLeftImg, anchor, scale, rotation, -shift, handAlpha);
-    drawPiece(RAKHI_LAYOUT.handRight, handRightImg, anchor, scale, rotation, shift, handAlpha);
+    drawPiece(design.stringLeft, stringLeftImg, anchor, scale, rotation, -shift, stringAlpha);
+    drawPiece(design.stringRight, stringRightImg, anchor, scale, rotation, shift, stringAlpha);
+    drawPiece(design.handLeft, handLeftImg, anchor, scale, rotation, -shift, handAlpha);
+    drawPiece(design.handRight, handRightImg, anchor, scale, rotation, shift, handAlpha);
   }
 
   captureBtn.addEventListener('click', () => {
