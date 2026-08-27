@@ -136,6 +136,46 @@
   }
   #hint.show { opacity: 1; }
 
+  /* ---- placement guide, shown before the first hand is ever detected ---- */
+  #guidePrompt {
+    position: absolute;
+    left: 50%;
+    top: 58%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: 6;
+  }
+  #guidePrompt.show { opacity: 1; }
+  #guidePrompt .ring {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,250,241,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulseRing 2s ease-in-out infinite;
+  }
+  @keyframes pulseRing {
+    0%, 100% { transform: scale(1); opacity: 0.75; }
+    50% { transform: scale(1.05); opacity: 1; }
+  }
+  #guidePrompt .guideIcon { width: 74px; height: auto; }
+  #guidePrompt .guideText {
+    color: #fffaf1;
+    font-size: 12px;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    max-width: 220px;
+    line-height: 1.6;
+  }
+
   /* ---- festive floating overlay ---- */
   #festiveHeading {
     position: absolute;
@@ -266,6 +306,16 @@
 
   <div id="festiveHeading">✨ Happy Raksha Bandhan ✨</div>
   <div id="captionBar" style="display:none;"></div>
+
+  <div id="guidePrompt">
+    <div class="ring">
+      <svg class="guideIcon" viewBox="0 0 100 110">
+        <path d="M20 108 C10 90, 8 60, 22 44 C30 35, 44 32, 50 40 C54 46, 52 54, 46 58 C58 58, 68 66, 68 78 C68 96, 46 108, 20 108 Z" fill="#fffaf1" opacity="0.9"/>
+      </svg>
+    </div>
+    <div class="guideText">Hold your wrist steady in the circle</div>
+  </div>
+
   <div id="hint">Point your camera at your wrist ✨</div>
   <div id="bottomBar" style="display:none;">
     <button id="captureBtn">Save this moment</button>
@@ -309,6 +359,7 @@
   const bottomBar = document.getElementById('bottomBar');
   const captureBtn = document.getElementById('captureBtn');
   const flash = document.getElementById('flash');
+  const guidePrompt = document.getElementById('guidePrompt');
 
   function showError(msg) {
     errorBox.textContent = msg;
@@ -415,6 +466,7 @@
         document.getElementById('festiveHeading').classList.add('show');
         document.getElementById('tasselLeft').classList.add('show');
         document.getElementById('tasselRight').classList.add('show');
+        guidePrompt.classList.add('show');
       });
       // safety fallback: if a hand is never detected, still surface the capture button
       setTimeout(revealChrome, 6000);
@@ -442,6 +494,7 @@
         lastLandmarks = landmarks;
         lastSeenAt = performance.now();
         if (presenceStartedAt === null) presenceStartedAt = lastSeenAt;
+        guidePrompt.classList.remove('show');
 
         const handedArr = (result.handednesses && result.handednesses[0])
           || (result.handedness && result.handedness[0]) || null;
@@ -483,6 +536,7 @@
     } else if (arState === 'steady') {
       drawRakhiAt(smooth, 1);
     }
+    updateAndDrawParticles();
   }
 
   function computeTransform(landmarks) {
@@ -498,9 +552,11 @@
     const forearmLen = Math.hypot(dx, dy) || 1;
     const dirX = dx / forearmLen, dirY = dy / forearmLen;
 
-    // hand span defines how wide the band should be
+    // hand span (knuckle row) defines how wide the band should be — the wrist itself is
+    // narrower than the knuckle row, so this stays well under 1x, not over it
     const span = Math.hypot(pinkyMcp.x - indexMcp.x, pinkyMcp.y - indexMcp.y);
-    const bandWidth = Math.max(span * 2.1, 60);
+    const WRIST_WIDTH_RATIO = 1.1; // tune this one number if the band still overhangs the arm
+    const bandWidth = Math.max(span * WRIST_WIDTH_RATIO, 40);
     const bandHeight = bandWidth * (rakhiImg.naturalHeight / rakhiImg.naturalWidth);
 
     // anchor point sits a bit past the wrist, onto the forearm
@@ -544,11 +600,53 @@
     ctx.restore();
   }
 
+  // simple placeholder celebration burst (flowers/sparks) — swap PARTICLE_COLORS or the
+  // draw shape in updateAndDrawParticles() once real illustrations replace this
+  let particles = [];
+  const PARTICLE_COLORS = ['#c73b2b', '#f2c14e', '#f2a33c', '#5c7a52', '#fbf6ee'];
+
+  function spawnCelebration(x, y) {
+    const n = 28;
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.4;
+      const speed = 2.4 + Math.random() * 2.8;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.8, // slight upward bias — reads as a small burst
+        life: 1,
+        decay: 0.011 + Math.random() * 0.009,
+        size: 4 + Math.random() * 5,
+        color: PARTICLE_COLORS[i % PARTICLE_COLORS.length]
+      });
+    }
+  }
+
+  function updateAndDrawParticles() {
+    if (!particles.length) return;
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.06; // gravity
+      p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(p.life, 0);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, p.size, p.size * 0.7, Math.atan2(p.vy, p.vx), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
   function drawTyingAnimation(now) {
     const t = now - tyingStartAt;
     if (t >= TYING_TOTAL_MS) {
       arState = 'steady';
       revealChrome();
+      spawnCelebration(smooth.x, smooth.y);
       drawRakhiAt(smooth, 1);
       return;
     }
