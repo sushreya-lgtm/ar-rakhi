@@ -451,21 +451,22 @@
     floral: {
       label: 'Floral & Radiant',
       file: 'assets/rakhi-floral-v2.png',
-      compositeW: 307, compositeH: 225,
-      handLeft:    { dx: -496.5, dy: -89.5, w: 332, h: 321 },
-      handRight:   { dx: 159.5,  dy: -88.5, w: 341, h: 320 },
-      stringLeft:  { dx: -356.5, dy: -35.5, w: 272, h: 92 },
-      stringRight: { dx: 92.5,   dy: -31.5, w: 287, h: 90 }
+      compositeW: 307, compositeH: 225
     },
     evileye: {
       label: 'Bold & Sleek Evil Eye',
       file: 'assets/rakhi-evileye-v2.png',
-      compositeW: 307, compositeH: 76,
-      handLeft:    { dx: -496.5, dy: -95.0, w: 332, h: 321 },
-      handRight:   { dx: 159.5,  dy: -94.0, w: 341, h: 320 },
-      stringLeft:  { dx: -356.5, dy: -41.0, w: 272, h: 92 },
-      stringRight: { dx: 92.5,   dy: -37.0, w: 287, h: 90 }
+      compositeW: 307, compositeH: 76
     }
+  };
+
+  // both hands, drawn together in one piece, always enter/exit from the right as a single
+  // rigid group — pivot is the midpoint between the two fingertips, in the image's own
+  // native pixels, measured directly off assets/hands-pair.png
+  const HANDS_PAIR = {
+    file: 'assets/hands-pair.png',
+    nativeW: 1398, nativeH: 593,
+    pivotX: 681.5, pivotY: 59.5
   };
 
   function escapeHtml(s) {
@@ -520,11 +521,9 @@
 
   const rakhiImg = new Image();
   rakhiImg.src = design.file;
-  // hand/string art is shared across every design, so these load once regardless of ?d=
-  const handLeftImg = new Image();    handLeftImg.src = 'assets/hand-left.png';
-  const handRightImg = new Image();   handRightImg.src = 'assets/hand-right.png';
-  const stringLeftImg = new Image();  stringLeftImg.src = 'assets/string-left.png';
-  const stringRightImg = new Image(); stringRightImg.src = 'assets/string-right.png';
+  // shared across every design, so this loads once regardless of ?d=
+  const handsPairImg = new Image();
+  handsPairImg.src = HANDS_PAIR.file;
 
   let handLandmarker = null;
   let lastVideoTime = -1;
@@ -826,44 +825,41 @@
       return;
     }
 
-    // the wrist keeps being tracked live throughout, so both hands always converge on
+    // the wrist keeps being tracked live throughout, so the hands always converge on
     // wherever it currently is rather than a point captured back at animation start
     const anchor = { x: smooth.x, y: smooth.y };
-    const scale = smooth.width / design.compositeW;
     const rotation = smooth.angle;
+    // both hands are one rigid piece — pivot (the point between the two fingertips) is what
+    // gets anchored; scaled independently of the Rakhi's own size
+    const handScale = (smooth.width * 3.2) / HANDS_PAIR.nativeW;
+    const handLayout = { dx: -HANDS_PAIR.pivotX, dy: -HANDS_PAIR.pivotY, w: HANDS_PAIR.nativeW, h: HANDS_PAIR.nativeH };
     const offscreen = Math.max(canvas.width, canvas.height) * 0.9;
 
-    let shift = 0, stringAlpha = 1, handAlpha = 1, rakhiAlpha = 0;
+    let shift = 0, handAlpha = 1, rakhiAlpha = 0;
 
     if (t < ENTER_MS) {
-      // both hands slide in from the sides, carrying the string
+      // both hands slide in together from the right — always the right, never split
       const p = easeInOutCubic(t / ENTER_MS);
       shift = offscreen * (1 - p);
       handAlpha = Math.min(1, t / 300);
-      stringAlpha = handAlpha;
     } else if (t < ENTER_MS + MEET_HOLD_MS) {
-      // met in the middle — hold for a beat before it "ties"
+      // in place — hold for a beat before it "ties"
       shift = 0;
     } else if (t < ENTER_MS + MEET_HOLD_MS + DISSOLVE_MS) {
-      // the string dissolves as the real Rakhi (base + top) fades in in its place
+      // the real Rakhi (base + top) fades in between the hands
       const p = (t - ENTER_MS - MEET_HOLD_MS) / DISSOLVE_MS;
       shift = 0;
-      stringAlpha = 1 - p;
       rakhiAlpha = p;
     } else {
-      // string is gone — the (now empty-handed) hands retreat the way they came
+      // the (now empty-handed) hands retreat back to the right, the way they came
       const p = easeInOutCubic((t - ENTER_MS - MEET_HOLD_MS - DISSOLVE_MS) / EXIT_MS);
       shift = offscreen * p;
-      stringAlpha = 0;
       rakhiAlpha = 1;
       handAlpha = 1 - p;
     }
 
     drawRakhiAt(smooth, rakhiAlpha);
-    drawPiece(design.stringLeft, stringLeftImg, anchor, scale, rotation, -shift, stringAlpha);
-    drawPiece(design.stringRight, stringRightImg, anchor, scale, rotation, shift, stringAlpha);
-    drawPiece(design.handLeft, handLeftImg, anchor, scale, rotation, -shift, handAlpha);
-    drawPiece(design.handRight, handRightImg, anchor, scale, rotation, shift, handAlpha);
+    drawPiece(handLayout, handsPairImg, anchor, handScale, rotation, shift, handAlpha);
   }
 
   captureBtn.addEventListener('click', () => {
