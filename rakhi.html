@@ -395,10 +395,23 @@
     loading.classList.remove('show');
   }
 
+  // v2 pipeline: real illustrated hand+string carries the Rakhi in from both sides at once.
+  // dx/dy/w/h come directly from the shared 2100x1500 Photoshop canvas Sushreya exported from —
+  // all pieces share that coordinate space, so these offsets are exact, not eyeballed.
+  const RAKHI_LAYOUT = {
+    compositeW: 307, compositeH: 225, // rakhi-floral-v2.png's own pixel size
+    handLeft:    { file: 'assets/hand-left.png',    dx: -496.5, dy: -89.5, w: 332, h: 321 },
+    handRight:   { file: 'assets/hand-right.png',   dx: 159.5,  dy: -88.5, w: 341, h: 320 },
+    stringLeft:  { file: 'assets/string-left.png',  dx: -356.5, dy: -35.5, w: 272, h: 92 },
+    stringRight: { file: 'assets/string-right.png', dx: 92.5,   dy: -31.5, w: 287, h: 90 }
+  };
+
   const rakhiImg = new Image();
-  rakhiImg.src = design.file;
-  const tyingHandImg = new Image();
-  tyingHandImg.src = 'assets/tying-hand.svg';
+  rakhiImg.src = 'assets/rakhi-floral-v2.png'; // TODO: reconnect to the ?d= picker once the animation is approved
+  const handLeftImg = new Image();  handLeftImg.src = RAKHI_LAYOUT.handLeft.file;
+  const handRightImg = new Image(); handRightImg.src = RAKHI_LAYOUT.handRight.file;
+  const stringLeftImg = new Image();  stringLeftImg.src = RAKHI_LAYOUT.stringLeft.file;
+  const stringRightImg = new Image(); stringRightImg.src = RAKHI_LAYOUT.stringRight.file;
 
   let handLandmarker = null;
   let lastVideoTime = -1;
@@ -420,14 +433,14 @@
   let lastSeenAt = 0;
   let inFrameSince = null;
 
-  // --- tie-in animation state ---
-  const SIDE_FLIPPED = false;  // flip if the entry side reads backwards in testing
-  const ENTER_MS = 1700, HOLD_MS = 550, EXIT_MS = 1100; // slow and deliberate, per reference
-  const TYING_TOTAL_MS = ENTER_MS + HOLD_MS + EXIT_MS;
+  // --- tie-in animation state: both hands slide in from the sides, hold, the string
+  // dissolves into the placed Rakhi, then the (now string-less) hands retreat. Slow and
+  // unhurried on purpose — no rush.
+  const ENTER_MS = 2200, MEET_HOLD_MS = 400, DISSOLVE_MS = 600, EXIT_MS = 1600;
+  const TYING_TOTAL_MS = ENTER_MS + MEET_HOLD_MS + DISSOLVE_MS + EXIT_MS;
   let arState = 'idle';        // 'idle' -> 'confirmed' -> 'tying' -> 'steady'
   let confirmedStartAt = null;
   let tyingStartAt = null;
-  let tyingSide = 'left';
 
   // --- manual drag/pinch correction, enabled once the Rakhi is placed ---
   let manualOffset = { x: 0, y: 0 };
@@ -451,12 +464,6 @@
   }
   function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  }
-  function deriveSide(handedLabel) {
-    // MediaPipe's handedness is read directly off the (unmirrored, rear-camera) frame.
-    let side = handedLabel === 'Left' ? 'right' : 'left';
-    if (SIDE_FLIPPED) side = side === 'left' ? 'right' : 'left';
-    return side;
   }
 
   async function loadModel() {
@@ -584,7 +591,6 @@
         } else if (now - confirmedStartAt > CONFIRM_MS) {
           arState = 'tying';
           tyingStartAt = now;
-          tyingSide = deriveSide(lastHandedLabel);
           scanFrame.classList.remove('show', 'confirmed');
           scanFrameText.classList.remove('show');
         }
@@ -667,16 +673,17 @@
     ctx.restore();
   }
 
-  // where the illustration's fingers pinch, as a fraction of its own width/height
-  const HAND_PINCH_FX = 0.819, HAND_PINCH_FY = 0.423;
-
-  function drawTyingHandAt(point, handW, handH, mirrored, alpha) {
-    if (!tyingHandImg.complete || tyingHandImg.naturalWidth === 0 || alpha <= 0) return;
+  // draws one v2 piece (hand or string) at its exact offset from the Rakhi's anchor, scaled
+  // to match the live-tracked size, rotated with the wrist, with an extra local-x slide applied
+  // for the enter/exit travel — extraShiftX is in the SAME rotated space as dx/dy, so the slide
+  // direction stays "sideways relative to the wrist" even when the wrist is tilted
+  function drawPiece(layout, img, anchor, scale, rotation, extraShiftX, alpha) {
+    if (!img.complete || img.naturalWidth === 0 || alpha <= 0) return;
     ctx.save();
+    ctx.translate(anchor.x, anchor.y);
+    ctx.rotate(rotation);
     ctx.globalAlpha = alpha;
-    ctx.translate(point.x, point.y);
-    if (mirrored) ctx.scale(-1, 1);
-    ctx.drawImage(tyingHandImg, -HAND_PINCH_FX * handW, -HAND_PINCH_FY * handH, handW, handH);
+    ctx.drawImage(img, layout.dx * scale + extraShiftX, layout.dy * scale, layout.w * scale, layout.h * scale);
     ctx.restore();
   }
 
@@ -736,42 +743,44 @@
       return;
     }
 
-    const w = canvas.width, h = canvas.height;
-    // the wrist keeps being tracked live throughout, so the hand always converges on
+    // the wrist keeps being tracked live throughout, so both hands always converge on
     // wherever it currently is rather than a point captured back at animation start
-    const anchorPoint = { x: smooth.x, y: smooth.y };
-    const handW = Math.max(smooth.width * 2.8, 260);
-    const handH = handW * (tyingHandImg.naturalHeight / tyingHandImg.naturalWidth);
-    const mirrored = tyingSide === 'right';
-    // enters from a steep top-corner diagonal, not a flat horizontal reach — ok to clip off-canvas
-    const startPoint = {
-      x: tyingSide === 'left' ? -handW * 0.5 : w + handW * 0.5,
-      y: -handH * 0.45
-    };
+    const anchor = { x: smooth.x, y: smooth.y };
+    const scale = smooth.width / RAKHI_LAYOUT.compositeW;
+    const rotation = smooth.angle;
+    const offscreen = Math.max(canvas.width, canvas.height) * 0.9;
 
-    let handPoint, rakhiPoint, handAlpha;
+    let shift = 0, stringAlpha = 1, handAlpha = 1, rakhiAlpha = 0;
 
     if (t < ENTER_MS) {
-      // carries the Rakhi in, pinched between its fingers
+      // both hands slide in from the sides, carrying the string
       const p = easeInOutCubic(t / ENTER_MS);
-      handPoint = { x: lerp(startPoint.x, anchorPoint.x, p), y: lerp(startPoint.y, anchorPoint.y, p) };
-      rakhiPoint = handPoint;
-      handAlpha = Math.min(1, t / 250);
-    } else if (t < ENTER_MS + HOLD_MS) {
-      // presses it into place
-      handPoint = anchorPoint;
-      rakhiPoint = anchorPoint;
-      handAlpha = 1;
+      shift = offscreen * (1 - p);
+      handAlpha = Math.min(1, t / 300);
+      stringAlpha = handAlpha;
+    } else if (t < ENTER_MS + MEET_HOLD_MS) {
+      // met in the middle — hold for a beat before it "ties"
+      shift = 0;
+    } else if (t < ENTER_MS + MEET_HOLD_MS + DISSOLVE_MS) {
+      // the string dissolves as the real Rakhi (base + top) fades in in its place
+      const p = (t - ENTER_MS - MEET_HOLD_MS) / DISSOLVE_MS;
+      shift = 0;
+      stringAlpha = 1 - p;
+      rakhiAlpha = p;
     } else {
-      // lets go and retreats the way it came; the Rakhi stays put, tracking the live wrist
-      const p = easeInOutCubic((t - ENTER_MS - HOLD_MS) / EXIT_MS);
-      handPoint = { x: lerp(anchorPoint.x, startPoint.x, p), y: lerp(anchorPoint.y, startPoint.y, p) };
-      rakhiPoint = anchorPoint;
+      // string is gone — the (now empty-handed) hands retreat the way they came
+      const p = easeInOutCubic((t - ENTER_MS - MEET_HOLD_MS - DISSOLVE_MS) / EXIT_MS);
+      shift = offscreen * p;
+      stringAlpha = 0;
+      rakhiAlpha = 1;
       handAlpha = 1 - p;
     }
 
-    drawRakhiAt({ ...smooth, x: rakhiPoint.x, y: rakhiPoint.y }, 1);
-    drawTyingHandAt(handPoint, handW, handH, mirrored, handAlpha);
+    drawRakhiAt(smooth, rakhiAlpha);
+    drawPiece(RAKHI_LAYOUT.stringLeft, stringLeftImg, anchor, scale, rotation, -shift, stringAlpha);
+    drawPiece(RAKHI_LAYOUT.stringRight, stringRightImg, anchor, scale, rotation, shift, stringAlpha);
+    drawPiece(RAKHI_LAYOUT.handLeft, handLeftImg, anchor, scale, rotation, -shift, handAlpha);
+    drawPiece(RAKHI_LAYOUT.handRight, handRightImg, anchor, scale, rotation, shift, handAlpha);
   }
 
   captureBtn.addEventListener('click', () => {
@@ -872,6 +881,45 @@
       dragLast = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   });
+
+  // TEMP DEBUG HARNESS — exercises the real render/animation code with a fabricated hand
+  // pose, bypassing camera + MediaPipe, so the animation can be screenshotted without a phone.
+  if (location.search.includes('debug=1')) {
+    window.__debugRun = function () {
+      intro.style.display = 'none';
+      loading.classList.remove('show');
+      arView.classList.add('show');
+      // match canvas resolution to the actual viewport so object-fit:cover doesn't crop
+      // the fabricated pose out of view during testing
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      document.getElementById('festiveHeading').classList.add('show');
+      document.getElementById('tasselLeft').classList.add('show');
+      document.getElementById('tasselRight').classList.add('show');
+
+      const fake = Array.from({ length: 21 }, () => ({ x: 0.5, y: 0.5, z: 0 }));
+      fake[0] = { x: 0.5, y: 0.58, z: 0 };
+      fake[9] = { x: 0.5, y: 0.42, z: 0 };
+      fake[5] = { x: 0.44, y: 0.44, z: 0 };
+      fake[17] = { x: 0.56, y: 0.44, z: 0 };
+      lastLandmarks = fake;
+      lastSeenAt = performance.now();
+      arState = 'tying';
+      tyingStartAt = performance.now();
+
+      function debugLoop() {
+        requestAnimationFrame(debugLoop);
+        lastSeenAt = performance.now();
+        const now = performance.now();
+        ctx.fillStyle = '#444';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        smoothToward(computeTransform(lastLandmarks));
+        if (arState === 'tying') drawTyingAnimation(now);
+        else if (arState === 'steady') drawRakhiAt(applyManualAdjust(smooth), 1);
+        updateAndDrawParticles();
+      }
+      requestAnimationFrame(debugLoop);
+    };
+  }
 </script>
 </body>
 </html>
