@@ -9,7 +9,7 @@
 <meta property="og:image" content="assets/og-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&family=Yatra+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fdf2da;
@@ -47,19 +47,13 @@
     overflow-y: auto;
     z-index: 20;
   }
-  .dhaaga-logo {
-    font-family: 'Yatra One', cursive;
-    font-size: 17px;
-    color: var(--dhaaga-teal);
-    letter-spacing: 0.02em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+  .dhaaga-logo-img {
+    width: 140px;
+    max-width: 45vw;
+    height: auto;
     margin-bottom: 10px;
     flex-shrink: 0;
   }
-  .dhaaga-logo .flourish { font-size: 9px; opacity: 0.75; }
 
   .arch-hero {
     position: relative;
@@ -156,6 +150,19 @@
     width: 100vw;
     height: 100vh;
     object-fit: cover;
+  }
+
+  /* decorative gradient window frame over the live camera — never clips the feed,
+     just a translucent wash with the window shape left see-through */
+  #cameraBackdrop {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 3;
   }
 
   #hint {
@@ -376,7 +383,7 @@
 <body>
 
 <div id="intro">
-  <div class="dhaaga-logo"><span class="flourish">—•</span>dhaaga<span class="flourish">•—</span></div>
+  <img class="dhaaga-logo-img" src="assets/dhaaga-logo.svg" alt="dhaaga">
 
   <div class="arch-hero">
     <svg viewBox="0 0 240 320">
@@ -405,6 +412,7 @@
 <div id="arView">
   <video id="video" playsinline muted autoplay></video>
   <canvas id="stage"></canvas>
+  <img id="cameraBackdrop" src="assets/camera-backdrop.svg" alt="">
 
   <svg id="tasselLeft" class="tassel" viewBox="0 0 40 90">
     <path d="M6 0 C6 0 4 10 8 16 C4 20 4 30 8 34 L8 60 C8 68 20 68 20 60 L20 34 C24 30 24 20 20 16 C24 10 22 0 22 0 Z" fill="#f2c14e"/>
