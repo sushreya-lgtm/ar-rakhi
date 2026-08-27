@@ -4,10 +4,11 @@
         fill="none" stroke="#e6b8ad" stroke-width="4" stroke-linecap="round"/>
 
   <!-- small end knots -->
-  <circle cx="30" cy="92" r="4" fill="#d99a8c"/>
-  <circle cx="310" cy="84" r="4" fill="#d99a8c"/>
+  <circle cx="30" cy="92" r="6" fill="#d99a8c"/>
+  <circle cx="310" cy="84" r="6" fill="#d99a8c"/>
 
   <!-- center charm -->
-  <circle cx="170" cy="88" r="16" fill="#fbf6ee" stroke="#cf9d3f" stroke-width="2.5"/>
+  <circle cx="170" cy="88" r="16" fill="#cf9d3f"/>
+  <circle cx="170" cy="88" r="12" fill="#fbf6ee"/>
   <circle cx="170" cy="88" r="5" fill="#cf9d3f"/>
 </svg>

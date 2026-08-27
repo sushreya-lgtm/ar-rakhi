@@ -136,20 +136,56 @@
   }
   #hint.show { opacity: 1; }
 
+  /* ---- festive floating overlay ---- */
+  #festiveHeading {
+    position: absolute;
+    top: max(18px, env(safe-area-inset-top));
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: #fffaf1;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.45);
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    z-index: 4;
+    pointer-events: none;
+    animation: floatY 5s ease-in-out infinite;
+  }
+  #festiveHeading.show { opacity: 0.8; }
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+
+  .tassel {
+    position: absolute;
+    top: 0;
+    width: 34px;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .tassel.show { opacity: 0.55; }
+  #tasselLeft { left: 14px; }
+  #tasselRight { right: 14px; }
+
   #captionBar {
     position: absolute;
-    top: max(16px, env(safe-area-inset-top));
+    top: max(56px, calc(env(safe-area-inset-top) + 40px));
     left: 16px;
     right: 16px;
-    background: rgba(255,250,241,0.9);
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 11px;
-    line-height: 1.5;
-    color: var(--ink);
+    text-align: center;
+    padding: 0 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #fffaf1;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     z-index: 5;
   }
-  #captionBar .from { color: var(--accent); font-weight: 700; }
+  #captionBar .from { color: #f7d878; font-weight: 700; }
 
   #bottomBar {
     position: absolute;
@@ -216,6 +252,19 @@
 <div id="arView">
   <video id="video" playsinline muted autoplay></video>
   <canvas id="stage"></canvas>
+
+  <svg id="tasselLeft" class="tassel" viewBox="0 0 40 90">
+    <path d="M6 0 C6 0 4 10 8 16 C4 20 4 30 8 34 L8 60 C8 68 20 68 20 60 L20 34 C24 30 24 20 20 16 C24 10 22 0 22 0 Z" fill="#f2c14e"/>
+    <circle cx="14" cy="70" r="6" fill="#c73b2b"/>
+    <path d="M14 76 L8 90 L20 90 Z" fill="#f2a33c"/>
+  </svg>
+  <svg id="tasselRight" class="tassel" viewBox="0 0 40 90">
+    <path d="M6 0 C6 0 4 10 8 16 C4 20 4 30 8 34 L8 60 C8 68 20 68 20 60 L20 34 C24 30 24 20 20 16 C24 10 22 0 22 0 Z" fill="#f2c14e"/>
+    <circle cx="14" cy="70" r="6" fill="#5c7a52"/>
+    <path d="M14 76 L8 90 L20 90 Z" fill="#f2a33c"/>
+  </svg>
+
+  <div id="festiveHeading">✨ Happy Raksha Bandhan ✨</div>
   <div id="captionBar" style="display:none;"></div>
   <div id="hint">Point your camera at your wrist ✨</div>
   <div id="bottomBar" style="display:none;">
@@ -289,7 +338,7 @@
 
   // --- tie-in animation state ---
   const SIDE_FLIPPED = false;  // flip if the entry side reads backwards in testing
-  const ENTER_MS = 550, HOLD_MS = 280, EXIT_MS = 480;
+  const ENTER_MS = 1700, HOLD_MS = 550, EXIT_MS = 1100; // slow and deliberate, per reference
   const TYING_TOTAL_MS = ENTER_MS + HOLD_MS + EXIT_MS;
   let arState = 'idle';        // 'idle' -> 'tying' -> 'steady'
   let tyingStartAt = null;
@@ -362,6 +411,11 @@
       intro.style.display = 'none';
       loading.classList.remove('show');
       arView.classList.add('show');
+      requestAnimationFrame(() => {
+        document.getElementById('festiveHeading').classList.add('show');
+        document.getElementById('tasselLeft').classList.add('show');
+        document.getElementById('tasselRight').classList.add('show');
+      });
       // safety fallback: if a hand is never detected, still surface the capture button
       setTimeout(revealChrome, 6000);
 
@@ -477,14 +531,16 @@
     ctx.restore();
   }
 
+  // where the illustration's fingers pinch, as a fraction of its own width/height
+  const HAND_PINCH_FX = 0.819, HAND_PINCH_FY = 0.423;
+
   function drawTyingHandAt(point, handW, handH, mirrored, alpha) {
     if (!tyingHandImg.complete || tyingHandImg.naturalWidth === 0 || alpha <= 0) return;
-    const fx = 0.987, fy = 0.478; // thread-end position as a fraction of the source illustration
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(point.x, point.y);
     if (mirrored) ctx.scale(-1, 1);
-    ctx.drawImage(tyingHandImg, -fx * handW, -fy * handH, handW, handH);
+    ctx.drawImage(tyingHandImg, -HAND_PINCH_FX * handW, -HAND_PINCH_FY * handH, handW, handH);
     ctx.restore();
   }
 
@@ -498,36 +554,40 @@
     }
 
     const w = canvas.width, h = canvas.height;
+    // the wrist keeps being tracked live throughout, so the hand always converges on
+    // wherever it currently is rather than a point captured back at animation start
     const anchorPoint = { x: smooth.x, y: smooth.y };
-    const handW = Math.max(smooth.width * 2.6, 220);
+    const handW = Math.max(smooth.width * 2.8, 260);
     const handH = handW * (tyingHandImg.naturalHeight / tyingHandImg.naturalWidth);
     const mirrored = tyingSide === 'right';
-    // diagonal off-screen start, per the "not a flat horizontal reach" note
+    // enters from a steep top-corner diagonal, not a flat horizontal reach — ok to clip off-canvas
     const startPoint = {
-      x: tyingSide === 'left' ? -handW * 0.7 : w + handW * 0.7,
-      y: anchorPoint.y + h * 0.22
+      x: tyingSide === 'left' ? -handW * 0.5 : w + handW * 0.5,
+      y: -handH * 0.45
     };
 
-    let handPoint, rakhiAlpha, handAlpha;
+    let handPoint, rakhiPoint, handAlpha;
 
     if (t < ENTER_MS) {
+      // carries the Rakhi in, pinched between its fingers
       const p = easeInOutCubic(t / ENTER_MS);
       handPoint = { x: lerp(startPoint.x, anchorPoint.x, p), y: lerp(startPoint.y, anchorPoint.y, p) };
-      rakhiAlpha = 0;
-      handAlpha = Math.min(1, t / 150);
+      rakhiPoint = handPoint;
+      handAlpha = Math.min(1, t / 250);
     } else if (t < ENTER_MS + HOLD_MS) {
-      const p = (t - ENTER_MS) / HOLD_MS;
+      // presses it into place
       handPoint = anchorPoint;
-      rakhiAlpha = p;
+      rakhiPoint = anchorPoint;
       handAlpha = 1;
     } else {
+      // lets go and retreats the way it came; the Rakhi stays put, tracking the live wrist
       const p = easeInOutCubic((t - ENTER_MS - HOLD_MS) / EXIT_MS);
       handPoint = { x: lerp(anchorPoint.x, startPoint.x, p), y: lerp(anchorPoint.y, startPoint.y, p) };
-      rakhiAlpha = 1;
+      rakhiPoint = anchorPoint;
       handAlpha = 1 - p;
     }
 
-    drawRakhiAt(smooth, rakhiAlpha);
+    drawRakhiAt({ ...smooth, x: rakhiPoint.x, y: rakhiPoint.y }, 1);
     drawTyingHandAt(handPoint, handW, handH, mirrored, handAlpha);
   }
 

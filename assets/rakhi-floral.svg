@@ -2,16 +2,18 @@
   <!-- thread band -->
   <path d="M 12 80 C 66 46, 122 106, 170 74 C 218 42, 274 102, 328 68"
         fill="none" stroke="#5c7a52" stroke-width="7" stroke-linecap="round"/>
-  <path d="M 12 80 C 66 46, 122 106, 170 74 C 218 42, 274 102, 328 68"
-        fill="none" stroke="#d9b65a" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 6"/>
+
+  <!-- knot -->
+  <circle cx="14" cy="80" r="7" fill="#d9b65a"/>
+  <circle cx="326" cy="70" r="7" fill="#d9b65a"/>
 
   <!-- left leaf sprig -->
   <path d="M 34 78 C 20 68, 10 74, 6 88" fill="none" stroke="#5c7a52" stroke-width="3" stroke-linecap="round"/>
-  <ellipse cx="14" cy="80" rx="7" ry="4" fill="#7fa06d" transform="rotate(-30 14 80)"/>
+  <ellipse cx="6" cy="84" rx="7" ry="4" fill="#7fa06d" transform="rotate(-30 6 84)"/>
 
   <!-- right leaf sprig -->
   <path d="M 306 70 C 320 60, 330 66, 334 80" fill="none" stroke="#5c7a52" stroke-width="3" stroke-linecap="round"/>
-  <ellipse cx="326" cy="72" rx="7" ry="4" fill="#7fa06d" transform="rotate(30 326 72)"/>
+  <ellipse cx="334" cy="76" rx="7" ry="4" fill="#7fa06d" transform="rotate(30 334 76)"/>
 
   <!-- marigold cluster (center) -->
   <g transform="translate(170 74)">
@@ -25,8 +27,8 @@
     </g>
     <circle cx="0" cy="0" r="10" fill="#e8862c"/>
     <!-- jasmine buds -->
-    <circle cx="-26" cy="-2" r="4.5" fill="#fbf6ee" stroke="#e6ddc6" stroke-width="1"/>
-    <circle cx="26" cy="4" r="4.5" fill="#fbf6ee" stroke="#e6ddc6" stroke-width="1"/>
-    <circle cx="6" cy="-26" r="4" fill="#fbf6ee" stroke="#e6ddc6" stroke-width="1"/>
+    <circle cx="-26" cy="-2" r="4.5" fill="#fbf6ee"/>
+    <circle cx="26" cy="4" r="4.5" fill="#fbf6ee"/>
+    <circle cx="6" cy="-26" r="4" fill="#fbf6ee"/>
   </g>
 </svg>
