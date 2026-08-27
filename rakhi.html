@@ -136,45 +136,71 @@
   }
   #hint.show { opacity: 1; }
 
-  /* ---- placement guide, shown before the first hand is ever detected ---- */
-  #guidePrompt {
+  #adjustHint {
     position: absolute;
     left: 50%;
-    top: 58%;
+    bottom: 110px;
+    transform: translateX(-50%);
+    background: rgba(58,31,26,0.55);
+    color: #fffaf1;
+    font-size: 11px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+  }
+  #adjustHint.show { opacity: 1; }
+
+  /* ---- scan frame, shown before the first hand is confirmed in place ---- */
+  #scanFrame {
+    position: absolute;
+    left: 50%;
+    top: 50%;
     transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
+    width: 68vw;
+    max-width: 340px;
+    height: 34vh;
+    max-height: 220px;
+    border-radius: 22px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
     opacity: 0;
     transition: opacity 0.5s ease;
     pointer-events: none;
     z-index: 6;
   }
-  #guidePrompt.show { opacity: 1; }
-  #guidePrompt .ring {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    border: 2px dashed rgba(255,250,241,0.75);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: pulseRing 2s ease-in-out infinite;
+  #scanFrame.show { opacity: 1; }
+  #scanFrame .bracket {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border: 3px solid rgba(255,250,241,0.85);
+    transition: border-color 0.3s ease;
   }
-  @keyframes pulseRing {
-    0%, 100% { transform: scale(1); opacity: 0.75; }
-    50% { transform: scale(1.05); opacity: 1; }
-  }
-  #guidePrompt .guideIcon { width: 74px; height: auto; }
-  #guidePrompt .guideText {
+  #scanFrame.confirmed .bracket { border-color: #f2c14e; }
+  #scanFrame .bracket.tl { top: -3px; left: -3px; border-right: none; border-bottom: none; border-top-left-radius: 16px; }
+  #scanFrame .bracket.tr { top: -3px; right: -3px; border-left: none; border-bottom: none; border-top-right-radius: 16px; }
+  #scanFrame .bracket.bl { bottom: -3px; left: -3px; border-right: none; border-top: none; border-bottom-left-radius: 16px; }
+  #scanFrame .bracket.br { bottom: -3px; right: -3px; border-left: none; border-top: none; border-bottom-right-radius: 16px; }
+  #scanFrameText {
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 150px);
+    transform: translateX(-50%);
     color: #fffaf1;
     font-size: 12px;
     text-align: center;
     text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    max-width: 220px;
+    max-width: 260px;
     line-height: 1.6;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: 6;
   }
+  #scanFrameText.show { opacity: 1; }
 
   /* ---- festive floating overlay ---- */
   #festiveHeading {
@@ -307,16 +333,16 @@
   <div id="festiveHeading">✨ Happy Raksha Bandhan ✨</div>
   <div id="captionBar" style="display:none;"></div>
 
-  <div id="guidePrompt">
-    <div class="ring">
-      <svg class="guideIcon" viewBox="0 0 100 110">
-        <path d="M20 108 C10 90, 8 60, 22 44 C30 35, 44 32, 50 40 C54 46, 52 54, 46 58 C58 58, 68 66, 68 78 C68 96, 46 108, 20 108 Z" fill="#fffaf1" opacity="0.9"/>
-      </svg>
-    </div>
-    <div class="guideText">Hold your wrist steady in the circle</div>
+  <div id="scanFrame">
+    <div class="bracket tl"></div>
+    <div class="bracket tr"></div>
+    <div class="bracket bl"></div>
+    <div class="bracket br"></div>
   </div>
+  <div id="scanFrameText">Hold your wrist inside the frame</div>
 
   <div id="hint">Point your camera at your wrist ✨</div>
+  <div id="adjustHint">Drag to move · pinch to resize</div>
   <div id="bottomBar" style="display:none;">
     <button id="captureBtn">Save this moment</button>
   </div>
@@ -359,7 +385,9 @@
   const bottomBar = document.getElementById('bottomBar');
   const captureBtn = document.getElementById('captureBtn');
   const flash = document.getElementById('flash');
-  const guidePrompt = document.getElementById('guidePrompt');
+  const scanFrame = document.getElementById('scanFrame');
+  const scanFrameText = document.getElementById('scanFrameText');
+  const adjustHint = document.getElementById('adjustHint');
 
   function showError(msg) {
     errorBox.textContent = msg;
@@ -380,24 +408,40 @@
   const GRACE_MS = 350;        // keep drawing at the last known spot through brief tracking dropouts
   const HINT_MS = 900;         // show the "point at your wrist" hint after this much continuous loss
   const SUSTAIN_MS = 350;      // require this much continuous detection before starting the tie-in
+  const CONFIRM_MS = 650;      // "got it" pause in the scan frame before the hand animation begins
+
+  // roughly matches #scanFrame's visual position (68vw × 34vh, centered) — the wrist landmark
+  // must land in here before we treat the hand as "placed"
+  const FRAME_BOUNDS = { x0: 0.16, x1: 0.84, y0: 0.33, y1: 0.67 };
 
   let smooth = null;           // { x, y, angle, width, height } — smoothed wrist transform
   let lastLandmarks = null;
   let lastHandedLabel = null;
   let lastSeenAt = 0;
-  let presenceStartedAt = null;
+  let inFrameSince = null;
 
   // --- tie-in animation state ---
   const SIDE_FLIPPED = false;  // flip if the entry side reads backwards in testing
   const ENTER_MS = 1700, HOLD_MS = 550, EXIT_MS = 1100; // slow and deliberate, per reference
   const TYING_TOTAL_MS = ENTER_MS + HOLD_MS + EXIT_MS;
-  let arState = 'idle';        // 'idle' -> 'tying' -> 'steady'
+  let arState = 'idle';        // 'idle' -> 'confirmed' -> 'tying' -> 'steady'
+  let confirmedStartAt = null;
   let tyingStartAt = null;
   let tyingSide = 'left';
+
+  // --- manual drag/pinch correction, enabled once the Rakhi is placed ---
+  let manualOffset = { x: 0, y: 0 };
+  let manualScale = 1;
+  let adjustHintShown = false;
 
   function revealChrome() {
     if (fromName || note) captionBar.style.display = 'block';
     bottomBar.style.display = 'flex';
+  }
+
+  function inFrame(landmarks) {
+    const x = landmarks[0].x, y = landmarks[0].y;
+    return x > FRAME_BOUNDS.x0 && x < FRAME_BOUNDS.x1 && y > FRAME_BOUNDS.y0 && y < FRAME_BOUNDS.y1;
   }
 
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -466,7 +510,8 @@
         document.getElementById('festiveHeading').classList.add('show');
         document.getElementById('tasselLeft').classList.add('show');
         document.getElementById('tasselRight').classList.add('show');
-        guidePrompt.classList.add('show');
+        scanFrame.classList.add('show');
+        scanFrameText.classList.add('show');
       });
       // safety fallback: if a hand is never detected, still surface the capture button
       setTimeout(revealChrome, 6000);
@@ -493,8 +538,6 @@
       if (landmarks) {
         lastLandmarks = landmarks;
         lastSeenAt = performance.now();
-        if (presenceStartedAt === null) presenceStartedAt = lastSeenAt;
-        guidePrompt.classList.remove('show');
 
         const handedArr = (result.handednesses && result.handednesses[0])
           || (result.handedness && result.handedness[0]) || null;
@@ -518,14 +561,41 @@
     if (present) {
       hint.classList.remove('show');
       smoothToward(computeTransform(lastLandmarks));
+      const withinFrame = inFrame(lastLandmarks);
 
-      if (arState === 'idle' && presenceStartedAt && (now - presenceStartedAt > SUSTAIN_MS)) {
-        arState = 'tying';
-        tyingStartAt = now;
-        tyingSide = deriveSide(lastHandedLabel);
+      if (arState === 'idle') {
+        if (withinFrame) {
+          if (inFrameSince === null) inFrameSince = now;
+          if (now - inFrameSince > SUSTAIN_MS) {
+            arState = 'confirmed';
+            confirmedStartAt = now;
+            scanFrame.classList.add('confirmed');
+            scanFrameText.textContent = 'Got it ✨';
+          }
+        } else {
+          inFrameSince = null;
+        }
+      } else if (arState === 'confirmed') {
+        if (!withinFrame) {
+          arState = 'idle';
+          inFrameSince = null;
+          scanFrame.classList.remove('confirmed');
+          scanFrameText.textContent = 'Hold your wrist inside the frame';
+        } else if (now - confirmedStartAt > CONFIRM_MS) {
+          arState = 'tying';
+          tyingStartAt = now;
+          tyingSide = deriveSide(lastHandedLabel);
+          scanFrame.classList.remove('show', 'confirmed');
+          scanFrameText.classList.remove('show');
+        }
       }
     } else {
-      presenceStartedAt = null;
+      inFrameSince = null;
+      if (arState === 'confirmed') {
+        arState = 'idle';
+        scanFrame.classList.remove('confirmed');
+        scanFrameText.textContent = 'Hold your wrist inside the frame';
+      }
       if (sinceSeen > HINT_MS) hint.classList.add('show');
     }
 
@@ -534,9 +604,19 @@
     if (arState === 'tying') {
       drawTyingAnimation(now);
     } else if (arState === 'steady') {
-      drawRakhiAt(smooth, 1);
+      drawRakhiAt(applyManualAdjust(smooth), 1);
     }
     updateAndDrawParticles();
+  }
+
+  function applyManualAdjust(t) {
+    return {
+      x: t.x + manualOffset.x,
+      y: t.y + manualOffset.y,
+      angle: t.angle,
+      width: t.width * manualScale,
+      height: t.height * manualScale
+    };
   }
 
   function computeTransform(landmarks) {
@@ -648,6 +728,11 @@
       revealChrome();
       spawnCelebration(smooth.x, smooth.y);
       drawRakhiAt(smooth, 1);
+      if (!adjustHintShown) {
+        adjustHintShown = true;
+        adjustHint.classList.add('show');
+        setTimeout(() => adjustHint.classList.remove('show'), 3200);
+      }
       return;
     }
 
@@ -713,6 +798,56 @@
   });
 
   startBtn.addEventListener('click', start);
+
+  // --- manual drag-to-move / pinch-to-resize correction, once the Rakhi is placed ---
+  let touchMode = null; // 'drag' | 'pinch' | null
+  let dragLast = null;
+  let pinchStartDist = null;
+  let pinchStartScale = 1;
+
+  function cssToCanvasScale() {
+    const rect = canvas.getBoundingClientRect();
+    return Math.max(canvas.width / rect.width, canvas.height / rect.height);
+  }
+  function touchDist(a, b) {
+    return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+  }
+
+  canvas.addEventListener('touchstart', (e) => {
+    if (arState !== 'steady') return;
+    if (e.touches.length === 1) {
+      touchMode = 'drag';
+      dragLast = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      touchMode = 'pinch';
+      pinchStartDist = touchDist(e.touches[0], e.touches[1]);
+      pinchStartScale = manualScale;
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (arState !== 'steady' || !touchMode) return;
+    const s = cssToCanvasScale();
+    if (touchMode === 'drag' && e.touches.length === 1) {
+      const t = e.touches[0];
+      manualOffset.x += (t.clientX - dragLast.x) * s;
+      manualOffset.y += (t.clientY - dragLast.y) * s;
+      dragLast = { x: t.clientX, y: t.clientY };
+    } else if (touchMode === 'pinch' && e.touches.length === 2) {
+      const dist = touchDist(e.touches[0], e.touches[1]);
+      manualScale = Math.min(2.5, Math.max(0.4, pinchStartScale * (dist / pinchStartDist)));
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) touchMode = null;
+    else if (e.touches.length === 1) {
+      touchMode = 'drag';
+      dragLast = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  });
 </script>
 </body>
 </html>
