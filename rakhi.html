@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fdf2da;
@@ -457,8 +457,8 @@
   #captionBar .note-line {
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
-    font-weight: 500;
-    font-size: 16px;
+    font-weight: 400;
+    font-size: 17px;
   }
 
   /* subtle golden sparkles around the festive heading + note, once the Rakhi is placed —
@@ -1278,7 +1278,9 @@
     // the hand+string pieces use a damped rotation (see dampedHandRotation) so they stay
     // visually cohesive at any wrist angle — the real Rakhi below still uses the true rotation
     const handRotation = dampedHandRotation(rotation);
-    const travelDir = elbowTravelDir(handRotation);
+    // always travels straight in from the right, full stop — a fixed direction can never look
+    // different from one run to the next, unlike one derived from live wrist rotation
+    const travelDir = { x: 1, y: 0 };
     const handLayout = { dx: -HANDS_PAIR.pivotX, dy: -HANDS_PAIR.pivotY, w: HANDS_PAIR.nativeW, h: HANDS_PAIR.nativeH };
 
     // both hands are one rigid piece — pivot (the point between the two fingertips) is what
@@ -1416,8 +1418,8 @@
       ctx.shadowBlur = 8 * s;
       ctx.fillStyle = '#fffaf1';
       if (note) {
-        ctx.font = `italic 500 ${16 * s}px 'Cormorant Garamond', serif`;
-        y = wrapCanvasText(note, canvas.width / 2, y, maxWidth, 22 * s);
+        ctx.font = `italic 400 ${17 * s}px 'Cormorant Garamond', serif`;
+        y = wrapCanvasText(note, canvas.width / 2, y, maxWidth, 23 * s);
       }
       if (fromName) {
         ctx.globalAlpha = 0.75;
