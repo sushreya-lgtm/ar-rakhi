@@ -46,6 +46,7 @@
     text-align: center;
     padding: max(16px, env(safe-area-inset-top)) 24px 20px;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 20;
   }
   .dhaaga-logo-img {
@@ -80,12 +81,18 @@
     0%, 100% { transform: rotate(-3deg); }
     50% { transform: rotate(3deg); }
   }
+  /* toName/note/fromName are free-typed by whoever sends the link — a long run with no spaces
+     (a URL, gibberish, no-space text) won't wrap at all by default and pushes the page wider
+     than the viewport. overflow-wrap forces a break inside a "word" as a last resort, only once
+     it's actually too long to fit — normal space-separated text still wraps normally first. */
   #dearLine {
     font-family: 'Fraunces', serif;
     font-weight: 500;
     font-style: italic;
     font-size: 17px;
     color: var(--ink);
+    max-width: 380px;
+    overflow-wrap: anywhere;
     margin: 0 0 10px;
   }
   #senderNote {
@@ -93,6 +100,7 @@
     color: var(--ink);
     line-height: 1.75;
     max-width: 380px;
+    overflow-wrap: anywhere;
     margin: 0 0 28px;
   }
   #senderNote .from-line {
@@ -101,6 +109,7 @@
     font-style: italic;
     font-size: 13px;
     color: var(--muted);
+    overflow-wrap: anywhere;
     margin-top: 10px;
   }
   .explainer {
@@ -335,6 +344,7 @@
     line-height: 1.6;
     color: #fffaf1;
     text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    overflow-wrap: anywhere;
     z-index: 5;
   }
   #captionBar .from { color: #f7d878; font-weight: 700; }
@@ -671,9 +681,6 @@
   let arState = 'idle';        // 'idle' -> 'confirmed' -> 'tying' -> 'steady'
   let confirmedStartAt = null;
   let tyingStartAt = null;
-  // which side the hands slide in/out from — decided once per tie-in, from wherever the
-  // wrist actually is, so it never has to travel backward across the whole frame
-  let tyingSide = 'right';
 
   // --- manual drag/pinch correction, enabled once the Rakhi is placed ---
   let manualOffset = { x: 0, y: 0 };
@@ -891,7 +898,6 @@
         } else if (now - confirmedStartAt > CONFIRM_MS) {
           arState = 'tying';
           tyingStartAt = now;
-          tyingSide = smooth.x < canvas.width / 2 ? 'left' : 'right';
           holdHapticFired = false;
           scanFrame.classList.remove('show', 'confirmed');
           scanFrameText.classList.remove('show');
@@ -983,10 +989,10 @@
   }
 
   // draws one v2 piece (hand or string). Its DOCKED position rotates with the wrist (so it
-  // lines up with the Rakhi once arrived), but worldShiftX is a plain horizontal offset applied
-  // in screen space, AFTER that rotation — so the enter/exit travel is always a fixed straight
-  // line from the edge, never diagonal, regardless of how tilted the wrist is.
-  function drawPiece(layout, img, anchor, scale, rotation, worldShiftX, alpha) {
+  // lines up with the Rakhi once arrived); worldShiftX/Y is a plain screen-space offset applied
+  // AFTER that rotation — travel direction is whatever the caller passes in (see
+  // elbowTravelDir below), not tied to the rotation used for the docked position itself.
+  function drawPiece(layout, img, anchor, scale, rotation, worldShiftX, worldShiftY, alpha) {
     if (!img || alpha <= 0) return;
     const isCanvas = img instanceof HTMLCanvasElement;
     if (!isCanvas && (!img.complete || img.naturalWidth === 0)) return;
@@ -997,11 +1003,35 @@
     const dockedY = anchor.y + dx * sin + dy * cos;
 
     ctx.save();
-    ctx.translate(dockedX + worldShiftX, dockedY);
+    ctx.translate(dockedX + worldShiftX, dockedY + worldShiftY);
     ctx.rotate(rotation);
     ctx.globalAlpha = alpha;
     ctx.drawImage(img, 0, 0, w, h);
     ctx.restore();
+  }
+
+  // hands-pair.png is two hands/arms that converge to a shared pinch point near the TOP of the
+  // image, with their elbows diverging toward the bottom-left and bottom-right corners — a "V"
+  // shape designed to read correctly when it's held close to upright. A live wrist can be tilted
+  // to any angle though, and rotating a "V" a long way from upright doesn't just tilt it — past
+  // ~45° the native left/right spread between the two hands starts projecting onto the vertical
+  // screen axis instead, so the two pinch points visually separate and drift apart along the
+  // real arm instead of staying together. There's no way to keep the hand piece perfectly
+  // matched to every possible wrist angle AND keep it looking like one cohesive gesture, so this
+  // damps rotation toward whichever of "upright" or "upside-down" (0 or 180°, both safe — the
+  // spread stays horizontal either way) is closer, keeping the two hands visually together even
+  // at odd wrist angles, at the cost of not perfectly tracking extreme tilts.
+  function dampedHandRotation(rotation) {
+    const nearestSafe = Math.round(rotation / Math.PI) * Math.PI;
+    const residual = rotation - nearestSafe;
+    return nearestSafe + residual * 0.3;
+  }
+
+  // the piece always exits/enters along its OWN elbow-pointing direction (local "down", i.e.
+  // away from the pivot toward the sleeves) rotated to match — never an arbitrary left/right
+  // pick independent of how the piece is actually oriented on screen
+  function elbowTravelDir(handRotation) {
+    return { x: -Math.sin(handRotation), y: Math.cos(handRotation) };
   }
 
   // The sleeve end of hands-pair.png is a hard rectangle cut, not a natural taper — so instead
@@ -1046,6 +1076,10 @@
     // wherever it currently is rather than a point captured back at animation start
     const anchor = { x: smooth.x, y: smooth.y };
     const rotation = smooth.angle;
+    // the hand+string pieces use a damped rotation (see dampedHandRotation) so they stay
+    // visually cohesive at any wrist angle — the real Rakhi below still uses the true rotation
+    const handRotation = dampedHandRotation(rotation);
+    const travelDir = elbowTravelDir(handRotation);
     const handLayout = { dx: -HANDS_PAIR.pivotX, dy: -HANDS_PAIR.pivotY, w: HANDS_PAIR.nativeW, h: HANDS_PAIR.nativeH };
 
     // both hands are one rigid piece — pivot (the point between the two fingertips) is what
@@ -1056,10 +1090,10 @@
     const baseHandScale = (smooth.width * 5.5) / HANDS_PAIR.nativeW;
     const sleeveMargin = 60;
     const farLeft = -HANDS_PAIR.pivotX, farRight = HANDS_PAIR.nativeW - HANDS_PAIR.pivotX;
-    const farTop = -HANDS_PAIR.pivotY, farBottom = HANDS_PAIR.nativeH - HANDS_PAIR.pivotY;
+    const farBottom = HANDS_PAIR.nativeH - HANDS_PAIR.pivotY;
     const requiredHandScale = Math.max(
-      cornerClearScale(anchor, farLeft, farBottom, rotation, sleeveMargin),
-      cornerClearScale(anchor, farRight, farBottom, rotation, sleeveMargin)
+      cornerClearScale(anchor, farLeft, farBottom, handRotation, sleeveMargin),
+      cornerClearScale(anchor, farRight, farBottom, handRotation, sleeveMargin)
     );
     const handScale = Math.max(baseHandScale, requiredHandScale);
 
@@ -1067,9 +1101,6 @@
     // same as before) — it and the hand move together via the same shift, so they stay attached
     const stringScale = smooth.width / design.compositeW;
     const offscreen = Math.max(canvas.width, canvas.height) * 0.9;
-    // enter/exit from whichever side is closer to the wrist right now (decided once, in
-    // tyingSide, when the tie-in starts) — never forces a backward slide across the frame
-    const dir = tyingSide === 'left' ? -1 : 1;
 
     let shift = 0, carryAlpha = 1, rakhiAlpha = 0, enterBoost = 1;
 
@@ -1103,8 +1134,8 @@
     // the wrist (shift stays 0) and simply fades out with carryAlpha, so it reads as wrapping
     // onto the wrist rather than being carried back off by the retreating hand
     const stringShift = t < ENTER_MS ? shift : 0;
-    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, rotation, stringShift * dir, carryAlpha);
-    drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale * enterBoost, rotation, shift * dir, carryAlpha);
+    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, handRotation, stringShift * travelDir.x, stringShift * travelDir.y, carryAlpha);
+    drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale * enterBoost, handRotation, shift * travelDir.x, shift * travelDir.y, carryAlpha);
   }
 
   captureBtn.addEventListener('click', () => {
@@ -1134,7 +1165,6 @@
     if (arState !== 'steady' || !smooth) return;
     arState = 'tying';
     tyingStartAt = performance.now();
-    tyingSide = smooth.x < canvas.width / 2 ? 'left' : 'right';
     holdHapticFired = false;
     // hide the celebration chrome again for the replay — same "clear during placement" rule
     document.getElementById('festiveHeading').classList.remove('show');
@@ -1267,19 +1297,28 @@
       // festive chrome intentionally NOT shown here — it's withheld until revealChrome()
       // fires at the end of drawTyingAnimation, same as the real flow
 
-      // ?tilt=1 fabricates a tilted wrist, to sanity-check that the enter/exit travel path
-      // stays a fixed straight line even when the docked rotation isn't level
+      // ?tilt=1 fabricates a moderately tilted wrist. ?horiz=1 fabricates a near-horizontal
+      // forearm (wrist and knuckles differ mostly in x, not y) — this is the case that used
+      // to make hands-pair.png's two hands visually separate along the arm, since its native
+      // left/right spread projects onto the screen's vertical axis at that rotation.
       const tilt = location.search.includes('tilt=1');
+      const horiz = location.search.includes('horiz=1');
       const fake = Array.from({ length: 21 }, () => ({ x: 0.5, y: 0.5, z: 0 }));
-      fake[0] = { x: tilt ? 0.6 : 0.5, y: 0.58, z: 0 };
-      fake[9] = { x: tilt ? 0.42 : 0.5, y: 0.42, z: 0 };
-      fake[5] = { x: tilt ? 0.36 : 0.44, y: 0.46, z: 0 };
-      fake[17] = { x: tilt ? 0.48 : 0.56, y: 0.42, z: 0 };
+      if (horiz) {
+        fake[0] = { x: 0.62, y: 0.5, z: 0 };
+        fake[9] = { x: 0.42, y: 0.5, z: 0 };
+        fake[5] = { x: 0.42, y: 0.44, z: 0 };
+        fake[17] = { x: 0.42, y: 0.56, z: 0 };
+      } else {
+        fake[0] = { x: tilt ? 0.6 : 0.5, y: 0.58, z: 0 };
+        fake[9] = { x: tilt ? 0.42 : 0.5, y: 0.42, z: 0 };
+        fake[5] = { x: tilt ? 0.36 : 0.44, y: 0.46, z: 0 };
+        fake[17] = { x: tilt ? 0.48 : 0.56, y: 0.42, z: 0 };
+      }
       lastLandmarks = fake;
       lastSeenAt = performance.now();
       arState = 'tying';
       tyingStartAt = performance.now();
-      tyingSide = fake[0].x < 0.5 ? 'left' : 'right';
       holdHapticFired = false;
 
       function debugLoop() {
