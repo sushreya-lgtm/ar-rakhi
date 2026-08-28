@@ -520,7 +520,9 @@
 
   #captionBar {
     position: absolute;
-    top: max(92px, calc(env(safe-area-inset-top) + 76px));
+    /* the placard is meaningfully taller than the old festiveHeading was — this was never
+       bumped to clear it, which is why the note ran into the board's bottom edge */
+    top: max(130px, calc(env(safe-area-inset-top) + 114px));
     left: 16px;
     right: 16px;
     text-align: center;
@@ -1610,7 +1612,7 @@
     }
 
     if (captionBar.style.display !== 'none' && (note || fromName)) {
-      let y = (92 + 16) * s;
+      let y = (130 + 16) * s; // matches #captionBar's live top offset, see its CSS comment
       const maxWidth = canvas.width * 0.72;
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
