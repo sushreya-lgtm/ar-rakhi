@@ -68,8 +68,8 @@
     margin: 4px 0 18px;
   }
   #introImg {
-    width: 220px;
-    max-width: 64vw;
+    width: 280px;
+    max-width: 78vw;
     height: auto;
     margin-bottom: 18px;
     filter: drop-shadow(0 8px 14px rgba(58,31,26,0.16));
@@ -777,6 +777,24 @@
   const stringPairImg = new Image();
   stringPairImg.src = 'assets/string-pair.png';
 
+  // real, intermittent bug this fixes: these three images start loading as soon as the page
+  // does, in parallel with the (much larger) MediaPipe model — on a slow connection they can
+  // still be mid-flight by the time the wrist gets confirmed (SUSTAIN_MS + CONFIRM_MS is only
+  // ~1s), and drawRakhiAt/drawPiece silently no-op on an incomplete image. Whichever piece
+  // happened to still be loading would simply be invisible for the first frames of the tie-in
+  // — "the hand comes in without the Rakhi" some runs and not others, purely by network timing.
+  // Gating the confirmed->tying transition on all three being loaded makes it deterministic;
+  // a generous timeout still lets things proceed if one genuinely fails to load at all, rather
+  // than getting stuck forever.
+  let assetsReadyCount = 0;
+  let assetsReady = false;
+  function markAssetReady() {
+    assetsReadyCount++;
+    if (assetsReadyCount >= 3) assetsReady = true;
+  }
+  rakhiImg.onload = markAssetReady;
+  stringPairImg.onload = markAssetReady;
+
   // the hand asset's own sleeve ends are a hard-cut rectangle edge, not a fade — if that edge
   // is ever what's visible on screen (rather than being safely off-canvas) it reads as a
   // "broken", floating stump. Bake a fade into the bottom ~45% of the image once, so no hard
@@ -795,6 +813,7 @@
     cctx.fillStyle = grad;
     cctx.fillRect(0, 0, c.width, c.height);
     handsPairMasked = c;
+    markAssetReady();
   };
 
   let handLandmarker = null;
@@ -1062,7 +1081,7 @@
           inFrameSince = null;
           scanFrame.classList.remove('confirmed');
           scanFrameText.textContent = 'Hold your wrist inside the frame';
-        } else if (now - confirmedStartAt > CONFIRM_MS) {
+        } else if (now - confirmedStartAt > CONFIRM_MS && (assetsReady || now - confirmedStartAt > CONFIRM_MS + 5000)) {
           arState = 'tying';
           tyingStartAt = now;
           handRotationBase = Math.round(smooth.angle / Math.PI) * Math.PI;
