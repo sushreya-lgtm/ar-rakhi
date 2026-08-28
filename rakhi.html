@@ -972,7 +972,11 @@
   let holdHapticFired = false; // reset per tie-in, fires once when the Rakhi starts to "land"
 
   function revealChrome(anchorX, anchorY) {
-    if (toName || fromName || note) captionBar.style.display = 'block';
+    // the note was already shown once on the intro screen before the camera ever opened —
+    // showing it again here felt redundant on a small phone screen. Desktop has the room to
+    // spare, so it stays there.
+    const isDesktopWidth = window.matchMedia('(min-width: 700px)').matches;
+    if (isDesktopWidth && (toName || fromName || note)) captionBar.style.display = 'block';
     bottomBar.style.display = 'flex';
     sparkles.classList.add('show');
     document.getElementById('revealMark').classList.add('show');
@@ -1301,21 +1305,23 @@
     ctx.restore();
   }
 
-  // ARCHITECTURE, deliberately simple after three rounds of trying to make the hand rotate to
+  // ARCHITECTURE, deliberately simple after four rounds of trying to make the hand rotate to
   // match the live wrist and breaking a different way each time: hands-pair.png is one flat
-  // image, and there is no rotation-matching scheme that makes a flat "V" of two hands look
-  // right at every possible live wrist angle — past ~45° from upright its own left/right spread
-  // starts projecting onto the vertical axis, and the two hands visually separate along the
-  // real arm. Every fix so far kept trying to solve that; this one sidesteps it instead.
+  // image, two hands drawn as a "V" converging near the top. That V only looks like one
+  // cohesive gesture within a few degrees of 0° (upright) or 180° (upside-down) — at any other
+  // angle its own left-right spread starts projecting onto the vertical axis, and the two hands
+  // visibly split apart along the real arm. 0° is ALSO exactly the angle elbowTravelDir already
+  // maps to "straight down" — so a fixed rotation of 0 and a "from the bottom" entry are the
+  // SAME safe choice, not two separate decisions to keep in sync. Do not change this rotation to
+  // anything other than 0 or Math.PI without re-deriving the travel direction to match — a fixed
+  // rotation at some other angle (e.g. a diagonal, to reach a corner) is exactly what caused the
+  // hands to visibly split apart last round.
   //
-  // The hand (and the string it's carrying) now ALWAYS enters from the same fixed angle —
-  // bottom-right corner — never derived from live tracking at all. It can't ever look broken,
-  // because it never attempts to match anything variable. Only the Rakhi itself (drawRakhiAt,
-  // untouched by any of this) rotates to the true live wrist angle, which it already did
-  // correctly the entire time — a small, roughly circular medallion has never had this problem.
-  // Do not reintroduce live-angle-following on the hand/string rotation; that is the exact
-  // thing that has broken three times.
-  const FIXED_HAND_ROTATION = -Math.PI / 4; // "V" tilted so it travels in from bottom-right
+  // Only the Rakhi itself (drawRakhiAt, untouched by any of this) rotates to the true live
+  // wrist angle, which it already did correctly the entire time — a small, roughly circular
+  // medallion has never had this problem. Do not reintroduce live-angle-following on the
+  // hand/string rotation; that is the exact thing that has broken four times now.
+  const FIXED_HAND_ROTATION = 0; // native/safe orientation — enters straight from the bottom
 
   // the piece always exits/enters along its OWN elbow-pointing direction (local "down", i.e.
   // away from the pivot toward the sleeves) — now always the same fixed direction, see above.
