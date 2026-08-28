@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>dhaaga — Send an AR Rakhi</title>
-<meta name="description" content="dhaaga — send a virtual Rakhi that ties itself onto their wrist through the camera, live. Pick a design, add a note, share the link.">
+<meta name="description" content="dhaaga — send an AR Rakhi that ties itself onto their wrist through the camera, live. Pick a design, add a note, share the link.">
 <meta property="og:title" content="dhaaga">
 <meta property="og:description" content="The thread that keeps you connected. Send an AR Rakhi to your sibling, wherever they are.">
 <meta property="og:image" content="assets/og-preview.png">
@@ -42,20 +42,36 @@
     text-align: center;
   }
 
-  .logo-img { width: 280px; max-width: 78vw; height: auto; margin-bottom: 40px; }
+  .logo-img { width: 260px; max-width: 74vw; height: auto; margin-bottom: 40px; }
 
   .hero-title {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     line-height: 1.35;
     margin: 0 0 8px;
   }
   .hero-title strong { color: var(--accent); }
   .hero-sub {
-    font-size: 14px;
+    font-size: 24px;
+    font-weight: 500;
     color: var(--muted);
-    margin: 0 0 24px;
+    line-height: 1.35;
+    margin: 0 0 20px;
   }
+
+  /* decorative divider — echoes the line + two dots flanking the logo wordmark */
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 20px;
+  }
+  .divider .line { width: 34px; height: 1.5px; background: var(--dhaaga-teal); }
+  .divider .dot { border-radius: 50%; background: var(--dhaaga-teal); opacity: 0.8; }
+  .divider .dot.sm { width: 6px; height: 6px; }
+  .divider .dot.lg { width: 11px; height: 11px; }
+
   .explain {
     font-size: 12px;
     color: var(--muted);
@@ -100,12 +116,6 @@
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.02em;
-  }
-  .rakhi-card .desc {
-    font-size: 10px;
-    color: var(--muted);
-    line-height: 1.5;
-    margin-top: 4px;
   }
   .rakhi-card:hover {
     transform: translateY(-2px);
@@ -252,8 +262,8 @@
   /* desktop: a touch more breathing room, content stays centered/contained */
   @media (min-width: 700px) {
     .page { padding-top: 72px; }
-    .logo-img { width: 320px; }
-    .hero-title { font-size: 30px; }
+    .logo-img { width: 300px; }
+    .hero-title, .hero-sub { font-size: 28px; }
   }
 </style>
 </head>
@@ -263,6 +273,7 @@
 
   <h1 class="hero-title">Send an AR Rakhi to your <strong>awesome sibling</strong></h1>
   <p class="hero-sub">wherever they are, however far.</p>
+  <div class="divider"><span class="line"></span><span class="dot sm"></span><span class="dot lg"></span></div>
   <p class="explain">An AR Rakhi is one they open right on their phone — they point the camera at their wrist, and it ties itself on, live, right in front of them.</p>
 
   <div class="step-label">Pick a Rakhi</div>
@@ -270,12 +281,10 @@
     <div class="rakhi-card" data-id="floral" data-name="Floral &amp; Radiant">
       <img src="assets/rakhi-floral-v2.png" alt="Floral & Radiant Rakhi">
       <div class="name">Floral &amp; Radiant</div>
-      <div class="desc">Warm, blooming, traditional</div>
     </div>
-    <div class="rakhi-card" data-id="evileye" data-name="Bold &amp; Sleek Evil Eye">
-      <img src="assets/rakhi-evileye-v2.png" alt="Bold & Sleek Evil Eye Rakhi">
-      <div class="name">Bold &amp; Sleek Evil Eye</div>
-      <div class="desc">Exciting, modern, protective</div>
+    <div class="rakhi-card" data-id="evileye" data-name="Sleek Evil Eye">
+      <img src="assets/rakhi-evileye-v2.png" alt="Sleek Evil Eye Rakhi">
+      <div class="name">Sleek Evil Eye</div>
     </div>
   </div>
 
@@ -309,7 +318,7 @@
   <p class="note-privacy">Works best opened directly on a phone — the camera is used live, on-device,<br>to place the Rakhi. Nothing is ever uploaded or stored.</p>
 
   <footer>
-    <div class="made-by">Made by <a href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Sushreya</a></div>
+    <div class="made-by">Made with love and illustrations by <a href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Sushreya</a></div>
     <div class="contact-label">Contact</div>
     <div class="contact-links">
       <a href="https://www.linkedin.com/in/sushreya-alwaysthinking/" target="_blank" rel="noopener">LinkedIn</a>
@@ -387,7 +396,7 @@
     const link = linkBox.textContent;
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'dhaaga', text: 'Happy Raksha Bandhan! Here\'s a virtual Rakhi for you 🧵', url: link });
+        await navigator.share({ title: 'dhaaga', text: 'Happy Raksha Bandhan! Here\'s an AR Rakhi for you 🧵', url: link });
       } catch (err) { /* user cancelled share — no action needed */ }
     } else {
       copyBtn.click();
