@@ -676,7 +676,9 @@
     #revealMark .dmDot.sm { width: 4px; height: 4px; }
     #revealMark .dmDot.lg { width: 7px; height: 7px; }
     #revealMark .big { font-size: 36px; }
-    #captionBar { left: 22vw; right: 22vw; font-size: 14px; }
+    /* bigger board on desktop needs more clearance too, plus a bit more breathing room than
+       the bare minimum, and the note itself reads better a size up given the extra space */
+    #captionBar { left: 22vw; right: 22vw; font-size: 17px; top: max(190px, calc(env(safe-area-inset-top) + 174px)); }
   }
 </style>
 </head>
@@ -952,6 +954,10 @@
   // how long, at the tail end of HOLD, the string takes to fade out — finishes right as the
   // hand starts to retreat, so the string is already gone by the time EXIT begins
   const STRING_FADE_MS = 300;
+  // how long, right at the start of HOLD, the Rakhi+string take to turn from the hand's fixed
+  // carry angle to the true wrist angle — the actual "it detects the wrist and turns to fit"
+  // moment. Roughly coincides with the existing "cinch" haptic pulse that already fires here.
+  const SNAP_MS = 350;
   let arState = 'idle';        // 'idle' -> 'confirmed' -> 'tying' -> 'steady'
   let confirmedStartAt = null;
   let tyingStartAt = null;
@@ -1272,12 +1278,12 @@
     smooth.angle = lerpAngle(smooth.angle, target.angle, a);
   }
 
-  function drawRakhiAt(t, alpha, scaleMult, worldShiftX, worldShiftY) {
+  function drawRakhiAt(t, alpha, scaleMult, worldShiftX, worldShiftY, rotationOverride) {
     if (!rakhiImg.complete || rakhiImg.naturalWidth === 0 || alpha <= 0) return;
     const s = scaleMult || 1;
     ctx.save();
     ctx.translate(t.x + (worldShiftX || 0), t.y + (worldShiftY || 0));
-    ctx.rotate(t.angle);
+    ctx.rotate(rotationOverride === undefined ? t.angle : rotationOverride);
     ctx.globalAlpha = 0.96 * alpha;
     ctx.drawImage(rakhiImg, -t.width * s / 2, -t.height * s / 2, t.width * s, t.height * s);
     ctx.restore();
@@ -1327,6 +1333,15 @@
   // away from the pivot toward the sleeves) — now always the same fixed direction, see above.
   function elbowTravelDir(handRotation) {
     return { x: -Math.sin(handRotation), y: Math.cos(handRotation) };
+  }
+
+  // interpolates from angle a to angle b the short way round (never more than 180°), used to
+  // snap the carried Rakhi+string from the hand's fixed angle to the true wrist angle without
+  // ever spinning the long way around
+  function lerpAngleShortest(a, b, p) {
+    let diff = b - a;
+    diff = ((diff + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    return a + diff * p;
   }
 
   // The sleeve end of hands-pair.png is a hard rectangle cut, not a natural taper — so instead
@@ -1397,6 +1412,10 @@
     const offscreen = Math.max(canvas.width, canvas.height) * 0.9;
 
     let shift = 0, carryAlpha = 1, rakhiAlpha = 0, rakhiShift = 0, stringAlpha = 1, enterBoost = 1;
+    // the angle actually used to draw the Rakhi+string this frame — starts at the hand's own
+    // fixed angle (so it looks genuinely held/carried, not floating independently already
+    // rotated) and turns to the true wrist angle in a short snap once placed. See SNAP_MS.
+    let handOffRotation = handRotation;
 
     if (t < ENTER_MS) {
       // hand + string + the Rakhi itself all slide in together as one rigid group — the Rakhi
@@ -1410,6 +1429,7 @@
       // a touch bigger while still carrying it in, easing back to true size right as it
       // arrives — gives the entrance some weight instead of feeling flat
       enterBoost = 1 + 0.15 * (1 - p);
+      handOffRotation = handRotation;
     } else if (t < ENTER_MS + HOLD_MS) {
       // placed: everything docked and fully visible for a beat (the "cinch" moment), then the
       // string lets go — fades out in the last stretch of the hold, before the hand ever moves
@@ -1420,6 +1440,10 @@
       const holdT = t - ENTER_MS;
       const fadeStart = HOLD_MS - STRING_FADE_MS;
       stringAlpha = holdT < fadeStart ? 1 : Math.max(0, 1 - (holdT - fadeStart) / STRING_FADE_MS);
+      // the actual "detects the wrist and turns to fit" moment — a quick snap from the hand's
+      // carry angle to the true wrist angle, right as it's placed
+      const snapP = Math.min(1, holdT / SNAP_MS);
+      handOffRotation = lerpAngleShortest(handRotation, rotation, easeInOutCubic(snapP));
       if (!holdHapticFired) { holdHapticFired = true; hapticPulse(40); }
     } else {
       // the string is already gone by now — just the bare hand retreating, empty-handed;
@@ -1430,16 +1454,17 @@
       rakhiAlpha = 1;
       rakhiShift = 0;
       stringAlpha = 0;
+      handOffRotation = rotation; // the snap already finished during HOLD
     }
 
     // a small pop-and-settle as the real Rakhi lands, synced to its own fade-in — makes the
     // "it's tied" moment feel like it landed with some weight instead of just fading in flat
     const rakhiBounce = 1 + 0.1 * Math.sin(Math.min(1, rakhiAlpha) * Math.PI);
-    drawRakhiAt(smooth, rakhiAlpha, rakhiBounce, rakhiShift * travelDir.x, rakhiShift * travelDir.y);
-    // the string's layout offset is defined relative to the Rakhi's own composite center, and
-    // it has to stay visually attached to the Rakhi (which always uses the true wrist angle) —
-    // not to the hand's fixed rotation, which is what was making the two look misaligned
-    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, rotation, shift * travelDir.x, shift * travelDir.y, stringAlpha);
+    drawRakhiAt(smooth, rakhiAlpha, rakhiBounce, rakhiShift * travelDir.x, rakhiShift * travelDir.y, handOffRotation);
+    // the string shares the SAME blended rotation as the Rakhi (see handOffRotation above) —
+    // both look carried at the hand's angle, then both snap to the true wrist angle together,
+    // so they can never visually disagree with each other the way they used to
+    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, handOffRotation, shift * travelDir.x, shift * travelDir.y, stringAlpha);
     drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale * enterBoost, handRotation, shift * travelDir.x, shift * travelDir.y, carryAlpha);
   }
 
