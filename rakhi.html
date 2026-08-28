@@ -1229,13 +1229,13 @@
   // it made the hand visibly snap to face the opposite way, sometimes mid-animation. Locking the
   // choice once per tie-in makes rotation change continuously for that whole ~4.6s animation, at
   // the cost of only comparing tie-ins to each other, never within one.
+  // the hand piece now always travels in dead horizontal (see travelDir below) — so it stays
+  // fully upright/horizontal too, matching its own straight travel path exactly, rather than
+  // tilting to chase the live wrist angle while still moving in a flat line. The real Rakhi
+  // (drawRakhiAt) is unaffected and still uses the true live rotation.
   let handRotationBase = 0;
   function dampedHandRotation(rotation) {
-    // wrapped to (-PI, PI] so a wrist that drifts a lot mid-animation still damps toward the
-    // SHORT way round from the locked base, never the long way
-    let residual = rotation - handRotationBase;
-    residual = ((residual + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-    return handRotationBase + residual * 0.3;
+    return handRotationBase;
   }
 
   // The sleeve end of hands-pair.png is a hard rectangle cut, not a natural taper — so instead
