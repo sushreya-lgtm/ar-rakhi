@@ -431,16 +431,12 @@
     noteCount.textContent = (140 - note.value.length) + ' characters left';
   });
 
-  // if they leave the note blank, the link should still carry something warmer than nothing —
-  // this is what actually shows on the receiver's screen, not just a hint they never typed over
-  const DEFAULT_NOTE = 'Sending you lots of love with this one.';
-
   function buildLink() {
     const url = new URL('rakhi.html', window.location.href);
     url.searchParams.set('d', selectedId);
     if (toName.value.trim()) url.searchParams.set('t', toName.value.trim());
     if (fromName.value.trim()) url.searchParams.set('n', fromName.value.trim());
-    url.searchParams.set('m', note.value.trim() || DEFAULT_NOTE);
+    if (note.value.trim()) url.searchParams.set('m', note.value.trim());
     return url.toString();
   }
 
