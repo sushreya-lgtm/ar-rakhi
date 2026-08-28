@@ -1548,11 +1548,18 @@
         ctx.restore();
       }
 
-      // .big's font-size is a responsive clamp() in the live DOM (see its CSS) — read the
-      // actual rendered size from the live element rather than hardcoding a px value here,
-      // so the saved photo always matches whatever size the clamp actually resolved to
+      // several of these have their own desktop-only CSS override (bigger padding, bigger
+      // "Happy") that this used to hardcode as mobile-only numbers — reading the live computed
+      // values instead means a desktop capture can never drift out of sync with what's on
+      // screen again, the same fix already applied to .big's font-size below
+      const placardEl = document.querySelector('#revealMark .placard');
+      const placardStyle = getComputedStyle(placardEl);
+      const padX = (parseFloat(placardStyle.paddingLeft) || 20) * s;
+      const padTop = (parseFloat(placardStyle.paddingTop) || 12) * s;
+      const padBottom = (parseFloat(placardStyle.paddingBottom) || 14) * s;
+      const liveHappySizePx = parseFloat(getComputedStyle(document.querySelector('#revealMark .happy')).fontSize) || 14;
       const liveBigSizePx = parseFloat(getComputedStyle(document.querySelector('#revealMark .big')).fontSize) || 26;
-      const happyFont = `italic 600 ${14 * s}px 'Cormorant Garamond', serif`;
+      const happyFont = `italic 600 ${liveHappySizePx * s}px 'Cormorant Garamond', serif`;
       const bigFont = `${liveBigSizePx * s}px 'Rozha One', serif`;
       ctx.font = bigFont;
       const bigWidth = ctx.measureText('Raksha Bandhan').width;
@@ -1561,9 +1568,8 @@
       const markSpan = (11 * s) + (3 * s * 2) + (1.5 * s) + (2.5 * s) + (3 * s); // line+dots+gaps, one side
       const happyRowWidth = happyWidth + (markSpan + 5 * s) * 2;
       const contentWidth = Math.max(bigWidth, happyRowWidth);
-      const padX = 20 * s, padTop = 12 * s, padBottom = 14 * s;
       const placardW = contentWidth + padX * 2;
-      const placardH = 16 * s + liveBigSizePx * s + padTop + padBottom;
+      const placardH = (liveHappySizePx + 2) * s + liveBigSizePx * s + padTop + padBottom;
       const placardX = canvas.width / 2 - placardW / 2;
       const placardY = topPx + 12 * s;
       const radius = 3 * s;
@@ -1604,7 +1610,7 @@
       ctx.strokeRect(placardX + 7 * s, placardY + 7 * s, placardW - 14 * s, placardH - 14 * s);
       ctx.restore();
 
-      const happyY = placardY + padTop + 12 * s;
+      const happyY = placardY + padTop + liveHappySizePx * s * 0.85;
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fffaf1';
       ctx.font = happyFont;
