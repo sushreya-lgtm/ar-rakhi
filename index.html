@@ -51,7 +51,7 @@
     font-style: italic;
     font-size: 30px;
     font-weight: 600;
-    color: var(--muted);
+    color: var(--ink);
     line-height: 1.3;
     margin: 0 0 10px;
   }
@@ -363,7 +363,7 @@
   </div>
   <div class="field">
     <label for="fromName">Your name</label>
-    <input type="text" id="fromName" maxlength="40" placeholder="e.g. Sushreya">
+    <input type="text" id="fromName" maxlength="40" placeholder="e.g. Pyari Behen, Annoying Behen">
   </div>
 
   <button class="btn" id="createBtn" disabled>Pick a Rakhi to continue</button>
@@ -424,7 +424,7 @@
 
   // if they leave the note blank, the link should still carry something warmer than nothing —
   // this is what actually shows on the receiver's screen, not just a hint they never typed over
-  const DEFAULT_NOTE = 'Happy Raksha Bandhan! Sending you lots of love with this one.';
+  const DEFAULT_NOTE = 'Sending you lots of love with this one.';
 
   function buildLink() {
     const url = new URL('rakhi.html', window.location.href);

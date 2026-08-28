@@ -102,6 +102,14 @@
     overflow-wrap: anywhere;
     margin-top: 10px;
   }
+  #senderNote .to-line {
+    display: block;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    margin-bottom: 8px;
+  }
   .explainer-label {
     font-size: 13px;
     font-weight: 700;
@@ -208,11 +216,12 @@
     position: absolute;
     top: max(16px, env(safe-area-inset-top));
     left: 16px;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    border: none;
-    background: rgba(58,31,26,0.5);
+    border: 1.5px solid rgba(255,250,241,0.35);
+    background: rgba(20,10,8,0.72);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
     color: #fffaf1;
     font-family: 'Martian Mono', monospace;
     font-size: 14px;
@@ -390,9 +399,11 @@
   #tasselLeft { left: 14px; }
   #tasselRight { right: 14px; }
 
-  /* her illustrated hanging-ornament pair — sits past the exit button and tasselLeft,
-     same reveal-moment fade + sway as everything else in this corner */
+  /* her illustrated hanging-ornament pair — on a narrow phone viewport the centered festive
+     heading spans wide enough to collide with it, so it's desktop-only (re-enabled in the
+     min-width:700px block below); same reveal-moment fade + sway as everything else here */
   #dangler {
+    display: none;
     position: absolute;
     top: -6px;
     left: 64px;
@@ -540,7 +551,8 @@
   @media (min-width: 700px) {
     #cameraBackdrop { display: none; }
     #scanFrame { width: 42vw; max-width: 480px; height: 42vh; max-height: 340px; }
-    #dangler { width: 150px; max-width: none; }
+    #dangler { display: block; width: 120px; max-width: none; top: -10px; left: 20px; }
+    #festiveHeading { top: calc(max(18px, env(safe-area-inset-top)) + 26px); }
   }
 </style>
 </head>
@@ -681,7 +693,8 @@
   // sender's actual written note, and only appears at all if they wrote one
   if (note || fromName) {
     const senderNote = document.getElementById('senderNote');
-    senderNote.innerHTML = escapeHtml(note)
+    senderNote.innerHTML = (toName ? '<span class="to-line">To ' + escapeHtml(toName) + '</span>' : '')
+      + escapeHtml(note)
       + (fromName ? '<span class="from-line">— ' + escapeHtml(fromName) + '</span>' : '');
     senderNote.style.display = 'block';
   }
