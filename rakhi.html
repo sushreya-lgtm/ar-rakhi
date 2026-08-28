@@ -443,7 +443,9 @@
   /* her real dangler ornament art, mirrored, sized so its outer edge meets the screen edge */
   #revealMark .dangler {
     position: absolute;
-    top: max(30px, calc(env(safe-area-inset-top) + 14px));
+    /* flush against the very top edge — only offset on a notched device, never by an
+       arbitrary padding amount on top of that */
+    top: env(safe-area-inset-top);
     width: 30vw;
     max-width: 135px;
     animation: sway 5s ease-in-out infinite;
@@ -1525,7 +1527,8 @@
       const danglerLeftImg = document.getElementById('danglerLeft');
       const danglerRightImg = document.getElementById('danglerRight');
       const danglerW = Math.min(canvas.width * 0.30, 135 * s);
-      const danglerTop = Math.max(30 * s, topPx + 12 * s);
+      // matches the live DOM's #revealMark .dangler: flush at the very top edge, no extra padding
+      const danglerTop = 0;
       if (danglerLeftImg.complete && danglerLeftImg.naturalWidth) {
         const dh = danglerW * (danglerLeftImg.naturalHeight / danglerLeftImg.naturalWidth);
         ctx.drawImage(danglerLeftImg, 0, danglerTop, danglerW, dh);
