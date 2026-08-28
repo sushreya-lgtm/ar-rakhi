@@ -176,6 +176,24 @@
     border-top: 1px solid var(--line);
     flex-shrink: 0;
   }
+  .intro-footer {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 20px;
+    flex-shrink: 0;
+  }
+  .intro-footer a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 1px;
+  }
+  .intro-footer a:hover { color: var(--dhaaga-teal); border-color: var(--dhaaga-teal); }
+  .intro-footer .credit { display: block; margin-bottom: 8px; }
+  .intro-footer .contact-links { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+  .intro-footer .legal { display: block; margin-top: 10px; }
+  .intro-footer .legal a { text-decoration: underline; border-bottom: none; }
+
   #errorBox {
     display: none;
     font-size: 12px;
@@ -590,6 +608,14 @@
 
   <button class="btn" id="startBtn">Open camera</button>
   <div class="privacy-note">This runs entirely on your phone. Your camera feed is never uploaded, recorded, or sent anywhere.</div>
+  <div class="intro-footer">
+    <a class="credit" href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Made by Sushreya</a>
+    <div class="contact-links">
+      <a href="https://www.linkedin.com/in/sushreya-alwaysthinking/" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://www.instagram.com/s___artt?utm_source=qr" target="_blank" rel="noopener">s___artt</a>
+    </div>
+    <span class="legal"><a href="privacy.html">Privacy Policy</a></span>
+  </div>
   <div id="errorBox"></div>
 </div>
 
