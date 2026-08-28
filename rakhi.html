@@ -7,6 +7,7 @@
 <meta property="og:title" content="dhaaga — An AR Rakhi for you">
 <meta property="og:description" content="Happy Raksha Bandhan! Open on your phone and point the camera at your wrist — it ties itself on, live.">
 <meta property="og:image" content="assets/og-preview.png">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,500;1,600&family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -446,6 +447,14 @@
     z-index: 25;
   }
   #loading.show { display: flex; }
+
+  /* desktop: the window-shaped gradient overlay reads as clutter on a wide viewport — drop it
+     entirely and just let the festive heading + tassels carry the moment. The scan frame also
+     needs to be visibly bigger against a much larger camera preview. */
+  @media (min-width: 700px) {
+    #cameraBackdrop { display: none; }
+    #scanFrame { width: 42vw; max-width: 480px; height: 42vh; max-height: 340px; }
+  }
 </style>
 </head>
 <body>
@@ -674,11 +683,12 @@
   // celebration chrome (festive heading, dangling tassels, the decorative backdrop, and a
   // one-shot firecracker burst) is deliberately withheld until the hand has fully receded —
   // during scanning/tying it competes visually with the actual placement moment
-  // a short tactile pulse as the hand enters frame — Vibration API only, so this is a
-  // no-op (not an error) on iOS Safari, which never implements it
-  function hapticPulse() {
-    if (navigator.vibrate) navigator.vibrate(30);
+  // Vibration API only, so this is a silent no-op (not an error) on iOS Safari, which never
+  // implements it. Accepts a single duration or a vibrate()-style pattern array.
+  function hapticPulse(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern || 30);
   }
+  let holdHapticFired = false; // reset per tie-in, fires once when the Rakhi starts to "land"
 
   function revealChrome() {
     if (toName || fromName || note) captionBar.style.display = 'block';
@@ -777,6 +787,16 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
+      // phones grant the rear ("environment") camera we asked for — pointed away from the
+      // user, so the raw feed is already "correct" and should never be mirrored. Desktops
+      // almost never have a rear camera, so this silently falls back to the front-facing
+      // webcam instead — and unlike every video-call app, getUserMedia never mirrors that
+      // for us, which reads as "backward" to anyone used to seeing themselves in a mirror.
+      // Mirror both the draw and the landmark math together whenever we're not certain we
+      // got the rear camera, so the whole tracked overlay stays visually consistent.
+      const trackSettings = stream.getVideoTracks()[0].getSettings ? stream.getVideoTracks()[0].getSettings() : {};
+      mirrored = trackSettings.facingMode !== 'environment';
+
       intro.style.display = 'none';
       loading.classList.remove('show');
       arView.classList.add('show');
@@ -799,6 +819,7 @@
   }
 
   let loopRunning = false;
+  let mirrored = false; // set once the camera is granted, in start()
 
   function loop() {
     if (!loopRunning) return;
@@ -811,6 +832,10 @@
       const landmarks = result && result.landmarks && result.landmarks[0] ? result.landmarks[0] : null;
 
       if (landmarks) {
+        // MediaPipe always detects on the raw, unmirrored frame — flip x here, once, so
+        // every downstream consumer (computeTransform, inFrame) already agrees with the
+        // mirrored draw below, instead of scattering `1 - x` through multiple functions
+        if (mirrored) { for (const p of landmarks) p.x = 1 - p.x; }
         lastLandmarks = landmarks;
         lastSeenAt = performance.now();
 
@@ -828,7 +853,14 @@
 
   function render() {
     const now = performance.now();
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (mirrored) {
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      ctx.restore();
+    } else {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
 
     const sinceSeen = now - lastSeenAt;
     const present = lastLandmarks && sinceSeen <= GRACE_MS;
@@ -860,6 +892,7 @@
           arState = 'tying';
           tyingStartAt = now;
           tyingSide = smooth.x < canvas.width / 2 ? 'left' : 'right';
+          holdHapticFired = false;
           scanFrame.classList.remove('show', 'confirmed');
           scanFrameText.classList.remove('show');
           hapticPulse();
@@ -938,13 +971,14 @@
     smooth.angle = lerpAngle(smooth.angle, target.angle, a);
   }
 
-  function drawRakhiAt(t, alpha) {
+  function drawRakhiAt(t, alpha, scaleMult) {
     if (!rakhiImg.complete || rakhiImg.naturalWidth === 0 || alpha <= 0) return;
+    const s = scaleMult || 1;
     ctx.save();
     ctx.translate(t.x, t.y);
     ctx.rotate(t.angle);
     ctx.globalAlpha = 0.96 * alpha;
-    ctx.drawImage(rakhiImg, -t.width / 2, -t.height / 2, t.width, t.height);
+    ctx.drawImage(rakhiImg, -t.width * s / 2, -t.height * s / 2, t.width * s, t.height * s);
     ctx.restore();
   }
 
@@ -997,6 +1031,9 @@
       arState = 'steady';
       revealChrome();
       drawRakhiAt(smooth, 1);
+      // a little celebratory flourish now that it's actually tied — the entry pulse alone
+      // made the whole thing feel a bit flat, this is the "reward" moment
+      hapticPulse([20, 40, 20, 40, 60]);
       if (!adjustHintShown) {
         adjustHintShown = true;
         adjustHint.classList.add('show');
@@ -1049,6 +1086,7 @@
       shift = 0;
       carryAlpha = 1;
       rakhiAlpha = (t - ENTER_MS) / HOLD_MS;
+      if (!holdHapticFired) { holdHapticFired = true; hapticPulse(40); } // the "cinch" moment
     } else {
       // only now does the hand start leaving — string fades out WITH it, never before
       const p = easeInOutCubic((t - ENTER_MS - HOLD_MS) / EXIT_MS);
@@ -1057,7 +1095,10 @@
       rakhiAlpha = 1;
     }
 
-    drawRakhiAt(smooth, rakhiAlpha);
+    // a small pop-and-settle as the real Rakhi lands, synced to its own fade-in — makes the
+    // "it's tied" moment feel like it landed with some weight instead of just fading in flat
+    const rakhiBounce = 1 + 0.1 * Math.sin(Math.min(1, rakhiAlpha) * Math.PI);
+    drawRakhiAt(smooth, rakhiAlpha, rakhiBounce);
     // the string only travels WITH the hand on the way in — once docked, it stays parked on
     // the wrist (shift stays 0) and simply fades out with carryAlpha, so it reads as wrapping
     // onto the wrist rather than being carried back off by the retreating hand
@@ -1094,6 +1135,7 @@
     arState = 'tying';
     tyingStartAt = performance.now();
     tyingSide = smooth.x < canvas.width / 2 ? 'left' : 'right';
+    holdHapticFired = false;
     // hide the celebration chrome again for the replay — same "clear during placement" rule
     document.getElementById('festiveHeading').classList.remove('show');
     document.getElementById('tasselLeft').classList.remove('show');
@@ -1238,6 +1280,7 @@
       arState = 'tying';
       tyingStartAt = performance.now();
       tyingSide = fake[0].x < 0.5 ? 'left' : 'right';
+      holdHapticFired = false;
 
       function debugLoop() {
         requestAnimationFrame(debugLoop);
