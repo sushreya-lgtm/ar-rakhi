@@ -180,6 +180,35 @@
     border-top: 1px solid var(--line);
     flex-shrink: 0;
   }
+  .own-cta {
+    margin-top: 40px;
+    padding: 18px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .own-cta p {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .own-cta a {
+    display: inline-block;
+    font-family: 'Martian Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: transparent;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 12px 20px;
+    text-decoration: none;
+  }
+  .own-cta a:hover { border-color: var(--dhaaga-teal); color: var(--dhaaga-teal); }
+
   .intro-footer {
     font-size: 12px;
     color: var(--muted);
@@ -667,6 +696,10 @@
 
   <button class="btn" id="startBtn">Open camera</button>
   <div class="privacy-note">This runs entirely on your phone. Your camera feed is never uploaded, recorded, or sent anywhere.</div>
+  <div class="own-cta">
+    <p>Loved this? Send one yourself.</p>
+    <a href="index.html">Create your own AR Rakhi</a>
+  </div>
   <div class="intro-footer">
     <a class="credit" href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Made by Sushreya</a>
     <div class="contact-links">
