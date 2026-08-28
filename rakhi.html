@@ -609,6 +609,9 @@
   let arState = 'idle';        // 'idle' -> 'confirmed' -> 'tying' -> 'steady'
   let confirmedStartAt = null;
   let tyingStartAt = null;
+  // which side the hands slide in/out from — decided once per tie-in, from wherever the
+  // wrist actually is, so it never has to travel backward across the whole frame
+  let tyingSide = 'right';
 
   // --- manual drag/pinch correction, enabled once the Rakhi is placed ---
   let manualOffset = { x: 0, y: 0 };
@@ -764,6 +767,7 @@
         } else if (now - confirmedStartAt > CONFIRM_MS) {
           arState = 'tying';
           tyingStartAt = now;
+          tyingSide = smooth.x < canvas.width / 2 ? 'left' : 'right';
           scanFrame.classList.remove('show', 'confirmed');
           scanFrameText.classList.remove('show');
         }
@@ -873,6 +877,27 @@
     ctx.restore();
   }
 
+  // The sleeve end of hands-pair.png is a hard rectangle cut, not a natural taper — so instead
+  // of hoping a fixed scale happens to push it off-canvas, work out the actual minimum scale
+  // that guarantees it, live, from wherever the wrist and rotation are right now. cx/cy is a
+  // corner of the image's bounding box, given relative to the pivot (in native, unscaled px).
+  // Returns the smallest scale at which that corner's screen position — rotated to match the
+  // wrist and cast outward from the anchor — lands at least `margin` px beyond whichever
+  // canvas edge it's heading toward.
+  function cornerClearScale(anchor, cx, cy, rotation, margin) {
+    const rx = cx * Math.cos(rotation) - cy * Math.sin(rotation);
+    const ry = cx * Math.sin(rotation) + cy * Math.cos(rotation);
+    const mag = Math.hypot(rx, ry) || 1;
+    const ux = rx / mag, uy = ry / mag;
+    let txExit = Infinity, tyExit = Infinity;
+    if (ux > 0.001) txExit = (canvas.width - anchor.x) / ux;
+    else if (ux < -0.001) txExit = (0 - anchor.x) / ux;
+    if (uy > 0.001) tyExit = (canvas.height - anchor.y) / uy;
+    else if (uy < -0.001) tyExit = (0 - anchor.y) / uy;
+    const tExit = Math.min(txExit, tyExit);
+    return (tExit + margin) / mag;
+  }
+
   function drawTyingAnimation(now) {
     const t = now - tyingStartAt;
     if (t >= TYING_TOTAL_MS) {
@@ -891,19 +916,35 @@
     // wherever it currently is rather than a point captured back at animation start
     const anchor = { x: smooth.x, y: smooth.y };
     const rotation = smooth.angle;
-    // both hands are one rigid piece — pivot (the point between the two fingertips) is what
-    // gets anchored; scaled independently of the Rakhi's own size
-    const handScale = (smooth.width * 3.2) / HANDS_PAIR.nativeW;
     const handLayout = { dx: -HANDS_PAIR.pivotX, dy: -HANDS_PAIR.pivotY, w: HANDS_PAIR.nativeW, h: HANDS_PAIR.nativeH };
+
+    // both hands are one rigid piece — pivot (the point between the two fingertips) is what
+    // gets anchored. Start from a scale that reads like a real hand next to a real wrist, then
+    // guarantee — via cornerClearScale, not by hoping — that the sleeve's far (elbow-side)
+    // corners land off-canvas at the DOCKED position, since that's the closest they ever get
+    // to fully on-screen (enter/exit only push them further out from there).
+    const baseHandScale = (smooth.width * 5.5) / HANDS_PAIR.nativeW;
+    const sleeveMargin = 60;
+    const farLeft = -HANDS_PAIR.pivotX, farRight = HANDS_PAIR.nativeW - HANDS_PAIR.pivotX;
+    const farTop = -HANDS_PAIR.pivotY, farBottom = HANDS_PAIR.nativeH - HANDS_PAIR.pivotY;
+    const requiredHandScale = Math.max(
+      cornerClearScale(anchor, farLeft, farBottom, rotation, sleeveMargin),
+      cornerClearScale(anchor, farRight, farBottom, rotation, sleeveMargin)
+    );
+    const handScale = Math.max(baseHandScale, requiredHandScale);
+
     // the string uses the Rakhi's own scale (it's positioned relative to the Rakhi's center,
     // same as before) — it and the hand move together via the same shift, so they stay attached
     const stringScale = smooth.width / design.compositeW;
     const offscreen = Math.max(canvas.width, canvas.height) * 0.9;
+    // enter/exit from whichever side is closer to the wrist right now (decided once, in
+    // tyingSide, when the tie-in starts) — never forces a backward slide across the frame
+    const dir = tyingSide === 'left' ? -1 : 1;
 
     let shift = 0, carryAlpha = 1, rakhiAlpha = 0;
 
     if (t < ENTER_MS) {
-      // hand + string slide in together from the right — always the right, never split
+      // hand + string slide in together as one rigid group, never split apart
       const p = easeInOutCubic(t / ENTER_MS);
       shift = offscreen * (1 - p);
       carryAlpha = Math.min(1, t / 300);
@@ -921,8 +962,8 @@
     }
 
     drawRakhiAt(smooth, rakhiAlpha);
-    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, rotation, shift, carryAlpha);
-    drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale, rotation, shift, carryAlpha);
+    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, rotation, shift * dir, carryAlpha);
+    drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale, rotation, shift * dir, carryAlpha);
   }
 
   captureBtn.addEventListener('click', () => {
@@ -952,6 +993,7 @@
     if (arState !== 'steady' || !smooth) return;
     arState = 'tying';
     tyingStartAt = performance.now();
+    tyingSide = smooth.x < canvas.width / 2 ? 'left' : 'right';
   });
 
   startBtn.addEventListener('click', start);
@@ -1087,6 +1129,7 @@
       lastSeenAt = performance.now();
       arState = 'tying';
       tyingStartAt = performance.now();
+      tyingSide = fake[0].x < 0.5 ? 'left' : 'right';
 
       function debugLoop() {
         requestAnimationFrame(debugLoop);
