@@ -390,6 +390,23 @@
   #tasselLeft { left: 14px; }
   #tasselRight { right: 14px; }
 
+  /* her illustrated hanging-ornament pair — sits past the exit button and tasselLeft,
+     same reveal-moment fade + sway as everything else in this corner */
+  #dangler {
+    position: absolute;
+    top: -6px;
+    left: 64px;
+    width: 92px;
+    max-width: 24vw;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+    z-index: 4;
+    pointer-events: none;
+    animation: sway 5s ease-in-out infinite;
+    transform-origin: top center;
+  }
+  #dangler.show { opacity: 0.9; }
+
   #captionBar {
     position: absolute;
     top: max(92px, calc(env(safe-area-inset-top) + 76px));
@@ -523,6 +540,7 @@
   @media (min-width: 700px) {
     #cameraBackdrop { display: none; }
     #scanFrame { width: 42vw; max-width: 480px; height: 42vh; max-height: 340px; }
+    #dangler { width: 150px; max-width: none; }
   }
 </style>
 </head>
@@ -584,6 +602,7 @@
     <circle cx="14" cy="70" r="6" fill="#5c7a52"/>
     <path d="M14 76 L8 90 L20 90 Z" fill="#f2a33c"/>
   </svg>
+  <img id="dangler" src="assets/dangler-ornaments.png" alt="">
 
   <div id="festiveHeading">
     <span class="serif">Happy Raksha Bandhan</span>
@@ -780,6 +799,7 @@
     document.getElementById('festiveHeading').classList.add('show');
     document.getElementById('tasselLeft').classList.add('show');
     document.getElementById('tasselRight').classList.add('show');
+    document.getElementById('dangler').classList.add('show');
     document.getElementById('cameraBackdrop').classList.add('show');
     fireCrackers(anchorX, anchorY);
   }
@@ -1356,6 +1376,7 @@
     document.getElementById('festiveHeading').classList.remove('show');
     document.getElementById('tasselLeft').classList.remove('show');
     document.getElementById('tasselRight').classList.remove('show');
+    document.getElementById('dangler').classList.remove('show');
     document.getElementById('cameraBackdrop').classList.remove('show');
     sparkles.classList.remove('show');
     hapticPulse();
@@ -1388,6 +1409,7 @@
     document.getElementById('festiveHeading').classList.remove('show');
     document.getElementById('tasselLeft').classList.remove('show');
     document.getElementById('tasselRight').classList.remove('show');
+    document.getElementById('dangler').classList.remove('show');
     document.getElementById('cameraBackdrop').classList.remove('show');
     document.getElementById('firecrackers').classList.remove('show');
     sparkles.classList.remove('show');
@@ -1426,6 +1448,7 @@
     document.getElementById('festiveHeading').classList.remove('show');
     document.getElementById('tasselLeft').classList.remove('show');
     document.getElementById('tasselRight').classList.remove('show');
+    document.getElementById('dangler').classList.remove('show');
     document.getElementById('cameraBackdrop').classList.remove('show');
     document.getElementById('firecrackers').classList.remove('show');
     sparkles.classList.remove('show');
