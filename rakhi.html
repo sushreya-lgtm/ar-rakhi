@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fdf2da;
@@ -28,7 +28,7 @@
     padding: 0;
     background: #000;
     color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Martian Mono', monospace;
     height: 100%;
     overflow: hidden;
   }
@@ -106,53 +106,45 @@
     font-size: 13px;
     font-weight: 700;
     color: var(--ink);
-    margin: 8px 0 14px;
+    margin: 8px 0 22px;
   }
-  /* decorative divider — echoes the line + two dots flanking the logo wordmark */
-  .divider {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 0 0 20px;
-  }
-  .divider .line { width: 34px; height: 1.5px; background: var(--dhaaga-teal); }
-  .divider .dot { border-radius: 50%; background: var(--dhaaga-teal); opacity: 0.8; }
-  .divider .dot.sm { width: 6px; height: 6px; }
-  .divider .dot.lg { width: 11px; height: 11px; }
 
   .steps {
-    text-align: left;
-    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 300px;
     margin: 0 auto 28px;
   }
   .steps .step {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
+  }
+  .steps .step-dot {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--dhaaga-teal);
+  }
+  .steps .step-connector {
+    width: 1.5px;
+    height: 22px;
+    background: var(--dhaaga-teal);
+    opacity: 0.4;
+    margin: 12px 0;
+  }
+  .steps .step-text {
     font-size: 12px;
     color: var(--muted);
     line-height: 1.6;
-    margin-bottom: 12px;
-  }
-  .steps .step:last-child { margin-bottom: 0; }
-  .steps .step-num {
-    flex-shrink: 0;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--card);
-    border: 1px solid var(--line);
-    color: var(--accent);
-    font-size: 10px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    max-width: 260px;
   }
   .btn {
     display: inline-block;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Martian Mono', monospace;
     font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -165,7 +157,7 @@
   }
   .btn:active { transform: scale(0.98); }
   .privacy-note {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--muted);
     line-height: 1.6;
     max-width: 320px;
@@ -222,11 +214,47 @@
     border: none;
     background: rgba(58,31,26,0.5);
     color: #fffaf1;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Martian Mono', monospace;
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
     z-index: 7;
+  }
+
+  /* shown the moment the tab is backgrounded/minimized — the camera stream itself is
+     already stopped by then (see visibilitychange handler), this overlay just makes that
+     state visible and requires a fresh tap (a real user gesture) to reacquire the camera,
+     rather than silently auto-resuming access to it. */
+  #pausedOverlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20,10,8,0.82);
+    z-index: 20;
+    text-align: center;
+    padding: 24px;
+  }
+  #pausedOverlay.show { display: flex; }
+  #pausedOverlay p {
+    color: #fffaf1;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 18px;
+    max-width: 260px;
+  }
+  #resumeBtn {
+    font-family: 'Martian Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fffaf1;
+    background: var(--dhaaga-teal);
+    border: none;
+    border-radius: 999px;
+    padding: 12px 24px;
+    cursor: pointer;
   }
 
   #hint {
@@ -254,7 +282,7 @@
     transform: translateX(-50%);
     background: rgba(58,31,26,0.55);
     color: #fffaf1;
-    font-size: 11px;
+    font-size: 12px;
     padding: 8px 14px;
     border-radius: 999px;
     opacity: 0;
@@ -454,8 +482,8 @@
     border: none;
     border-radius: 999px;
     padding: 14px 22px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
+    font-family: 'Martian Mono', monospace;
+    font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     box-shadow: 0 6px 16px rgba(0,0,0,0.25);
@@ -509,12 +537,22 @@
 
   <div id="senderNote" style="display:none;"></div>
 
-  <div class="explainer-label">What's an AR Rakhi?</div>
-  <div class="divider"><span class="line"></span><span class="dot sm"></span><span class="dot lg"></span></div>
+  <div class="explainer-label">Here's how it works</div>
   <div class="steps">
-    <div class="step"><span class="step-num">1</span><span>Open your camera and hold your wrist inside the frame</span></div>
-    <div class="step"><span class="step-num">2</span><span>The Rakhi ties itself on, live, right on your screen</span></div>
-    <div class="step"><span class="step-num">3</span><span>Drag to reposition or pinch to resize once it's placed</span></div>
+    <div class="step">
+      <span class="step-dot"></span>
+      <span class="step-text">Open your camera and hold your wrist inside the frame</span>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <span class="step-dot"></span>
+      <span class="step-text">The Rakhi ties itself on, live, right on your screen</span>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <span class="step-dot"></span>
+      <span class="step-text">Drag to reposition or pinch to resize once it's placed</span>
+    </div>
   </div>
 
   <button class="btn" id="startBtn">Open camera</button>
@@ -529,6 +567,12 @@
   <canvas id="stage"></canvas>
   <img id="cameraBackdrop" src="assets/camera-backdrop.svg" alt="">
   <button id="exitArBtn" aria-label="Close camera">✕</button>
+  <div id="pausedOverlay">
+    <div>
+      <p>Camera paused — closed automatically while this tab wasn't in view.</p>
+      <button id="resumeBtn">Tap to resume</button>
+    </div>
+  </div>
 
   <svg id="tasselLeft" class="tassel" viewBox="0 0 40 90">
     <path d="M6 0 C6 0 4 10 8 16 C4 20 4 30 8 34 L8 60 C8 68 20 68 20 60 L20 34 C24 30 24 20 20 16 C24 10 22 0 22 0 Z" fill="#f2c14e"/>
@@ -1244,7 +1288,7 @@
       ctx.fillStyle = '#fffaf1';
       ctx.font = `italic 600 ${32 * s}px 'Cormorant Garamond', serif`;
       ctx.fillText('Happy Raksha Bandhan', canvas.width / 2, topPx + 32 * s);
-      ctx.font = `700 ${12 * s}px 'DM Sans', sans-serif`;
+      ctx.font = `700 ${12 * s}px 'Martian Mono', monospace`;
       ctx.fillText('STAY BLESSED', canvas.width / 2, topPx + 32 * s + 20 * s);
       ctx.shadowBlur = 0;
     }
@@ -1256,19 +1300,19 @@
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 8 * s;
       if (toName) {
-        ctx.font = `700 ${13 * s}px 'DM Sans', sans-serif`;
+        ctx.font = `700 ${13 * s}px 'Martian Mono', monospace`;
         ctx.fillStyle = '#f7d878';
         ctx.fillText('To ' + toName, canvas.width / 2, y);
         y += 20 * s;
       }
       ctx.fillStyle = '#fffaf1';
       if (note) {
-        ctx.font = `400 ${13 * s}px 'DM Sans', sans-serif`;
+        ctx.font = `400 ${13 * s}px 'Martian Mono', monospace`;
         y = wrapCanvasText(note, canvas.width / 2, y, maxWidth, 19 * s);
       }
       if (fromName) {
         ctx.globalAlpha = 0.75;
-        ctx.font = `400 ${13 * s}px 'DM Sans', sans-serif`;
+        ctx.font = `400 ${13 * s}px 'Martian Mono', monospace`;
         ctx.fillText('— ' + fromName, canvas.width / 2, y);
         ctx.globalAlpha = 1;
       }
@@ -1351,6 +1395,44 @@
     bottomBar.style.display = 'none';
   }
   document.getElementById('exitArBtn').addEventListener('click', exitAr);
+
+  // --- camera kill-switch on tab hide: the browser does NOT stop getUserMedia on its own
+  // when a tab is merely backgrounded (only on navigation/close), so a page left open in a
+  // background tab would otherwise keep holding the camera live indefinitely. Stop the
+  // stream and the render loop the instant the tab is hidden, and require an explicit tap
+  // (a real user gesture, not an automatic resume) to reacquire it. ---
+  const pausedOverlay = document.getElementById('pausedOverlay');
+  document.getElementById('resumeBtn').addEventListener('click', () => {
+    pausedOverlay.classList.remove('show');
+    start();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    if (!arView.classList.contains('show') || !video.srcObject) return;
+    loopRunning = false;
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+    arState = 'idle';
+    smooth = null;
+    lastLandmarks = null;
+    lastSeenAt = 0;
+    inFrameSince = null;
+    manualOffset = { x: 0, y: 0 };
+    manualScale = 1;
+    scanFrame.classList.remove('show', 'confirmed');
+    scanFrameText.classList.remove('show');
+    scanFrameText.textContent = 'Hold your wrist inside the frame';
+    hint.classList.remove('show');
+    document.getElementById('festiveHeading').classList.remove('show');
+    document.getElementById('tasselLeft').classList.remove('show');
+    document.getElementById('tasselRight').classList.remove('show');
+    document.getElementById('cameraBackdrop').classList.remove('show');
+    document.getElementById('firecrackers').classList.remove('show');
+    sparkles.classList.remove('show');
+    captionBar.style.display = 'none';
+    bottomBar.style.display = 'none';
+    pausedOverlay.classList.add('show');
+  });
 
   // --- manual drag-to-move / pinch-to-resize correction, once the Rakhi is placed ---
   let touchMode = null; // 'drag' | 'pinch' | null
