@@ -651,7 +651,7 @@
     <circle cx="14" cy="70" r="6" fill="#5c7a52"/>
     <path d="M14 76 L8 90 L20 90 Z" fill="#f2a33c"/>
   </svg>
-  <img id="dangler" src="assets/dangler-ornaments.png" alt="">
+  <img id="dangler" alt="">
 
   <div id="festiveHeading">
     <span class="serif">Happy Raksha Bandhan</span>
@@ -725,6 +725,14 @@
   const note = (params.get('m') || '').slice(0, 140);
 
   document.getElementById('introImg').src = design.fullFile;
+
+  // the dangler ornament is desktop-only (see the min-width:700px block), but a static
+  // <img src> would still fetch it on every phone visit regardless of whether it's ever shown
+  // — this is a phone-camera experience, so most visitors are on mobile. Only set the src (and
+  // trigger the download) when actually on a desktop-width viewport.
+  if (window.matchMedia('(min-width: 700px)').matches) {
+    document.getElementById('dangler').src = 'assets/dangler-ornaments.png';
+  }
 
   // the heading itself already says "here's a Rakhi for you" — this slot is only for the
   // sender's actual written note, and only appears at all if they wrote one
