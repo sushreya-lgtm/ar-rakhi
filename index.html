@@ -99,45 +99,52 @@
   }
 
   .step-label {
-    font-size: 12px;
-    letter-spacing: 0.1em;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--ink);
     text-align: left;
     margin: 0 0 16px;
   }
-  .step-label.spaced { margin-top: 52px; }
+  .step-label.centered { text-align: center; font-size: 14px; }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 40px 0;
+  }
 
   .gallery {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     margin-bottom: 12px;
   }
   .gallery-note {
     font-size: 12px;
     color: var(--muted);
     text-align: center;
-    margin: 0 0 36px;
+    margin: 0 0 12px;
   }
   .rakhi-card {
     background: var(--card);
     border: 1.5px solid var(--line);
-    border-radius: 12px;
-    padding: 16px 10px 14px;
+    border-radius: 14px;
+    padding: 22px 16px 18px;
     cursor: pointer;
     transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     -webkit-tap-highlight-color: transparent;
   }
   .rakhi-card img {
     width: 100%;
-    height: 84px;
+    height: 140px;
     object-fit: contain;
     display: block;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
   .rakhi-card .name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.02em;
   }
@@ -264,19 +271,32 @@
     font-size: 12px;
     color: var(--muted);
   }
-  footer .footer-links {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  footer .footer-links a {
+  footer a {
     color: var(--muted);
     text-decoration: none;
     border-bottom: 1px dashed var(--line);
     padding-bottom: 1px;
   }
-  footer .footer-links a:hover { color: var(--dhaaga-teal); border-color: var(--dhaaga-teal); }
-  footer .footer-links .legal a { text-decoration: underline; border-bottom: none; }
+  footer a:hover { color: var(--dhaaga-teal); border-color: var(--dhaaga-teal); }
+  footer .illustration-credit {
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+  footer .contact-label {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.7;
+    margin-bottom: 10px;
+  }
+  footer .footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  footer .legal a { text-decoration: underline; border-bottom: none; }
   footer .made-with-love {
     margin-top: 20px;
     font-size: 12px;
@@ -316,20 +336,22 @@
     </div>
   </div>
 
-  <div class="step-label">Pick a Rakhi</div>
+  <div class="step-label centered">Pick a Rakhi</div>
   <div class="gallery" id="gallery">
     <div class="rakhi-card" data-id="floral" data-name="Floral &amp; Radiant">
-      <img src="assets/rakhi-floral-v2.png" alt="Floral & Radiant Rakhi">
+      <img src="assets/rakhi-floral-full.png" alt="Floral & Radiant Rakhi">
       <div class="name">Floral &amp; Radiant</div>
     </div>
     <div class="rakhi-card" data-id="evileye" data-name="Sleek Evil Eye">
-      <img src="assets/rakhi-evileye-v2.png" alt="Sleek Evil Eye Rakhi">
+      <img src="assets/rakhi-evileye-full.png" alt="Sleek Evil Eye Rakhi">
       <div class="name">Sleek Evil Eye</div>
     </div>
   </div>
   <div class="gallery-note">More designs on the way ✨</div>
 
-  <div class="step-label spaced">Add a note</div>
+  <hr class="section-divider">
+
+  <div class="step-label">Add a note</div>
   <div class="field">
     <label for="toName">Who's it for?</label>
     <input type="text" id="toName" maxlength="40" placeholder="e.g. My dear brother, Best bro ever, Dada">
@@ -359,12 +381,13 @@
   <p class="note-privacy">Works best opened directly on a phone — the camera is used live, on-device,<br>to place the Rakhi. Nothing is ever uploaded or stored.</p>
 
   <footer>
+    <a class="illustration-credit" href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Illustrations made by Sushreya</a>
+    <div class="contact-label">Contact</div>
     <div class="footer-links">
-      <a href="https://www.instagram.com/s___artt/" target="_blank" rel="noopener">Illustrations by Sushreyas</a>
-      <a href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Illustrations made by the Behance account</a>
       <a href="https://www.linkedin.com/in/sushreya-alwaysthinking/" target="_blank" rel="noopener">LinkedIn</a>
-      <span class="legal"><a href="privacy.html">Privacy Policy</a></span>
+      <a href="https://www.instagram.com/s___artt?utm_source=qr" target="_blank" rel="noopener">s___artt</a>
     </div>
+    <span class="legal"><a href="privacy.html">Privacy Policy</a></span>
     <div class="made-with-love">Made with love ❤️</div>
   </footer>
 </div>
