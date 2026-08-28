@@ -9,7 +9,7 @@
 <meta property="og:image" content="assets/og-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fdf2da;
@@ -69,6 +69,12 @@
     margin-bottom: 8px;
     filter: drop-shadow(0 8px 14px rgba(58,31,26,0.16));
     flex-shrink: 0;
+    transform-origin: top center;
+    animation: sway 4.5s ease-in-out infinite;
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
   }
   #senderNote {
     font-size: 13px;
@@ -255,8 +261,6 @@
     left: 0;
     right: 0;
     text-align: center;
-    font-size: 13px;
-    letter-spacing: 0.06em;
     color: #fffaf1;
     text-shadow: 0 2px 10px rgba(0,0,0,0.45);
     opacity: 0;
@@ -265,7 +269,21 @@
     pointer-events: none;
     animation: floatY 5s ease-in-out infinite;
   }
-  #festiveHeading.show { opacity: 0.8; }
+  #festiveHeading.show { opacity: 0.95; }
+  #festiveHeading .cursive {
+    display: block;
+    font-family: 'Dancing Script', cursive;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 1.2;
+  }
+  #festiveHeading .regular {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
   @keyframes floatY {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(4px); }
@@ -286,7 +304,7 @@
 
   #captionBar {
     position: absolute;
-    top: max(56px, calc(env(safe-area-inset-top) + 40px));
+    top: max(92px, calc(env(safe-area-inset-top) + 76px));
     left: 16px;
     right: 16px;
     text-align: center;
@@ -420,7 +438,10 @@
     <path d="M14 76 L8 90 L20 90 Z" fill="#f2a33c"/>
   </svg>
 
-  <div id="festiveHeading">✨ Happy Raksha Bandhan ✨</div>
+  <div id="festiveHeading">
+    <span class="cursive">Happy Raksha Bandhan</span>
+    <span class="regular">Stay Blessed</span>
+  </div>
   <div class="sparkles" id="sparkles">
     <span class="spark">✦</span><span class="spark">✧</span><span class="spark">✧</span><span class="spark">✦</span>
   </div>

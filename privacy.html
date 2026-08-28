@@ -48,34 +48,44 @@
   <h1>Privacy Policy</h1>
   <div class="updated">Last updated August 2026</div>
 
-  <p>dhaaga is a small, independent project — a way to send an AR Rakhi. Here's exactly what happens with your information when you use it.</p>
+  <p>dhaaga has no backend. No account, no database, no server logic — just static pages on
+  GitHub Pages and a camera that never sends anything anywhere. That's not a summary of a longer
+  policy; it's the whole reason this page can be this short.</p>
 
-  <h2>The short version</h2>
-  <p>We don't collect, store, sell, rent, or trade your personal information. There's no account, no database, and no server behind this site beyond static file hosting — there's nothing to collect it into.</p>
+  <h2>What actually happens when you send a Rakhi</h2>
+  <p>The recipient's name, your name, and your note aren't saved to a database — because there
+  isn't one. They're encoded directly into the link you get after picking a design, and they only
+  ever exist inside that link. Whoever opens it can read them (the same way anyone can read a text
+  message you forward), so only send it to the person it's for. Delete or stop sharing the link,
+  and that's the end of it — there's no copy sitting on a server, because it was never sent to one.</p>
 
-  <h2>The camera</h2>
-  <p>When you open a Rakhi link and grant camera access, hand-tracking runs entirely on your own device, in your browser. Your camera feed is never uploaded, recorded, or transmitted anywhere — not to us, not to any server. It never leaves your phone.</p>
+  <h2>What actually happens when you open one</h2>
+  <p>Hand-tracking runs locally, in your phone's browser, using a WebAssembly model loaded once
+  from Google's public CDN. Your camera feed is decoded frame-by-frame on-device to find your
+  wrist — it is never uploaded, saved to disk, or transmitted off your phone, by dhaaga or by
+  anyone else. Closing the tab or tapping the exit button ends it; nothing persists after that.</p>
 
-  <h2>Names and notes</h2>
-  <p>When someone sends a Rakhi, the recipient's name, sender's name, and any note are stored only inside the link itself (as part of its web address) — never on a server or in any database we control. Anyone with that link can read it, so treat it the way you'd treat any message you're sharing, and only send it to the person it's meant for.</p>
-
-  <h2>Third-party services</h2>
-  <p>This site loads a few things from other providers, purely to run:</p>
+  <h2>Who else is involved</h2>
+  <p>Three outside services, each doing exactly one job and receiving nothing personal from you:</p>
   <ul>
-    <li>Google Fonts, for the typefaces on this page</li>
-    <li>MediaPipe (a Google-provided hand-tracking model), loaded from a public CDN and run entirely on your device</li>
-    <li>GitHub Pages, which hosts these files as static pages</li>
+    <li><strong>Google Fonts</strong> — serves the typefaces on this page</li>
+    <li><strong>MediaPipe</strong> (Google) — the hand-tracking model, run entirely on your device</li>
+    <li><strong>GitHub Pages</strong> — hosts these files as static pages</li>
   </ul>
-  <p>None of these receive your name, note, or camera feed from this site.</p>
+  <p>None of them see your name, your note, or your camera feed — that data never leaves the
+  browser tab to reach them in the first place.</p>
 
-  <h2>Children's privacy</h2>
-  <p>dhaaga is not directed at children, and we do not knowingly collect personal information from anyone under 13. If you believe a child has shared personal information through this site, please reach out and we'll address it.</p>
+  <h2>Children</h2>
+  <p>This isn't built for or marketed to children, and it doesn't knowingly collect anything from
+  anyone under 13. If you're a parent and think a child has shared something through a dhaaga link,
+  reach out below and it'll be sorted out.</p>
 
-  <h2>Changes</h2>
-  <p>If this policy changes, this page will be updated with a new date above.</p>
+  <h2>If this changes</h2>
+  <p>Adding a real backend, analytics, or any data collection would be a big enough change that
+  this page — and the date at the top — would be updated first, not after.</p>
 
   <h2>Questions</h2>
-  <p>Reach out via <a href="https://www.instagram.com/s___artt" target="_blank" rel="noopener">Instagram</a> or <a href="https://www.linkedin.com/in/sushreya-alwaysthinking/" target="_blank" rel="noopener">LinkedIn</a>.</p>
+  <p>Reach out via <a href="https://www.linkedin.com/in/sushreya-alwaysthinking/" target="_blank" rel="noopener">LinkedIn</a>.</p>
 </div>
 </body>
 </html>
