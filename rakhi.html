@@ -450,6 +450,9 @@
 
   /* her real dangler ornament art, mirrored, sized so its outer edge meets the screen edge */
   #revealMark .dangler {
+    /* mobile's small screen already has the board + the colorful Rakhi itself — the danglers
+       on top of that read as too loud/busy there. Desktop has the room to carry them */
+    display: none;
     position: absolute;
     /* flush against the very top edge — only offset on a notched device, never by an
        arbitrary padding amount on top of that */
@@ -581,6 +584,21 @@
   .sparkles .spark:nth-child(4) { right: 14%; animation-delay: 0.5s; }
   .sparkles .spark:nth-child(5) { left: 6%; top: 62%; animation-delay: 1.1s; }
   .sparkles .spark:nth-child(6) { right: 6%; top: 74%; animation-delay: 0.4s; }
+  /* filling the space the danglers used to occupy, on mobile only — kept small/subtle so the
+     Rakhi itself stays the thing the eye goes to, not another loud element */
+  .sparkles .spark:nth-child(7) { left: 3%; top: 8%; font-size: 10px; animation-delay: 1.7s; }
+  .sparkles .spark:nth-child(8) { right: 3%; top: 40%; font-size: 10px; animation-delay: 0.7s; }
+  .sparkles .spark:nth-child(9) { left: 18%; top: 82%; font-size: 10px; animation-delay: 1.3s; }
+  .sparkles .spark:nth-child(10) { right: 20%; top: 4%; font-size: 10px; animation-delay: 0.2s; }
+  @media (min-width: 700px) {
+    /* desktop kept its own version of this ask already (a couple extra bigger sparks) —
+       the mobile-specific fill-in ones would look sparse/scattered at desktop's much wider
+       canvas, so they stay mobile-only */
+    .sparkles .spark:nth-child(7),
+    .sparkles .spark:nth-child(8),
+    .sparkles .spark:nth-child(9),
+    .sparkles .spark:nth-child(10) { display: none; }
+  }
   @keyframes twinkle {
     0%, 100% { opacity: 0; transform: scale(0.6); }
     50% { opacity: 1; transform: scale(1); }
@@ -676,7 +694,7 @@
     #scanFrame { width: 42vw; max-width: 480px; height: 42vh; max-height: 340px; }
     /* there's real room on desktop that the mobile-tuned sizing doesn't use — bigger
        danglers/board/text, not just the same assets stretched */
-    #revealMark .dangler { width: 16vw; max-width: 220px; }
+    #revealMark .dangler { display: block; width: 16vw; max-width: 220px; }
     #revealMark .placard { padding: 18px 28px 20px; }
     #revealMark .happy { font-size: 18px; }
     #revealMark .dmLine { width: 14px; }
@@ -771,7 +789,7 @@
     </div>
   </div>
   <div class="sparkles" id="sparkles">
-    <span class="spark">✦</span><span class="spark">✧</span><span class="spark">✧</span><span class="spark">✦</span><span class="spark">✧</span><span class="spark">✦</span>
+    <span class="spark">✦</span><span class="spark">✧</span><span class="spark">✧</span><span class="spark">✦</span><span class="spark">✧</span><span class="spark">✦</span><span class="spark">✧</span><span class="spark">✦</span><span class="spark">✧</span><span class="spark">✦</span>
   </div>
   <div id="firecrackers"></div>
   <div id="captionBar" style="display:none;"></div>
@@ -841,8 +859,12 @@
 
   // the dangler ornament is now part of the core reveal-moment design on mobile too (it used
   // to be desktop-only), so both mirrored copies load unconditionally
-  document.getElementById('danglerLeft').src = 'assets/dangler-ornaments.png';
-  document.getElementById('danglerRight').src = 'assets/dangler-ornaments.png';
+  // desktop-only again (per her call that it reads too busy on mobile's small screen) — only
+  // fetch the asset when it'll actually be shown, same reasoning as the very first round of this
+  if (window.matchMedia('(min-width: 700px)').matches) {
+    document.getElementById('danglerLeft').src = 'assets/dangler-ornaments.png';
+    document.getElementById('danglerRight').src = 'assets/dangler-ornaments.png';
+  }
 
   // the heading itself already says "here's a Rakhi for you" — this slot is only for the
   // sender's actual written note, and only appears at all if they wrote one
