@@ -453,7 +453,12 @@
     overflow-wrap: anywhere;
     z-index: 5;
   }
-  #captionBar .from { color: #f7d878; font-weight: 700; }
+  #captionBar .note-line {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 16px;
+  }
 
   /* subtle golden sparkles around the festive heading, once the Rakhi is placed */
   .sparkles {
@@ -728,11 +733,10 @@
     senderNote.style.display = 'block';
   }
 
-  if (toName || fromName || note) {
+  if (fromName || note) {
     const cap = document.getElementById('captionBar');
     let html = '';
-    if (toName) html += '<span class="from">To ' + escapeHtml(toName) + '</span><br>';
-    if (note) html += escapeHtml(note);
+    if (note) html += '<span class="note-line">' + escapeHtml(note) + '</span>';
     if (fromName) html += '<br><span style="opacity:.75">— ' + escapeHtml(fromName) + '</span>';
     cap.innerHTML = html;
   }
@@ -815,6 +819,9 @@
   // disappears once the hand starts leaving, never before. Slow and unhurried on purpose.
   const ENTER_MS = 2200, HOLD_MS = 800, EXIT_MS = 1600;
   const TYING_TOTAL_MS = ENTER_MS + HOLD_MS + EXIT_MS;
+  // how long, at the tail end of HOLD, the string takes to fade out — finishes right as the
+  // hand starts to retreat, so the string is already gone by the time EXIT begins
+  const STRING_FADE_MS = 300;
   let arState = 'idle';        // 'idle' -> 'confirmed' -> 'tying' -> 'steady'
   let confirmedStartAt = null;
   let tyingStartAt = null;
@@ -1135,11 +1142,11 @@
     smooth.angle = lerpAngle(smooth.angle, target.angle, a);
   }
 
-  function drawRakhiAt(t, alpha, scaleMult) {
+  function drawRakhiAt(t, alpha, scaleMult, worldShiftX, worldShiftY) {
     if (!rakhiImg.complete || rakhiImg.naturalWidth === 0 || alpha <= 0) return;
     const s = scaleMult || 1;
     ctx.save();
-    ctx.translate(t.x, t.y);
+    ctx.translate(t.x + (worldShiftX || 0), t.y + (worldShiftY || 0));
     ctx.rotate(t.angle);
     ctx.globalAlpha = 0.96 * alpha;
     ctx.drawImage(rakhiImg, -t.width * s / 2, -t.height * s / 2, t.width * s, t.height * s);
@@ -1272,39 +1279,47 @@
     const stringScale = smooth.width / design.compositeW;
     const offscreen = Math.max(canvas.width, canvas.height) * 0.9;
 
-    let shift = 0, carryAlpha = 1, rakhiAlpha = 0, enterBoost = 1;
+    let shift = 0, carryAlpha = 1, rakhiAlpha = 0, rakhiShift = 0, stringAlpha = 1, enterBoost = 1;
 
     if (t < ENTER_MS) {
-      // hand + string slide in together as one rigid group, never split apart
+      // hand + string + the Rakhi itself all slide in together as one rigid group — the Rakhi
+      // is carried in already fully formed, it never dissolves into place partway through
       const p = easeInOutCubic(t / ENTER_MS);
       shift = offscreen * (1 - p);
       carryAlpha = Math.min(1, t / 300);
+      rakhiAlpha = carryAlpha;
+      rakhiShift = shift;
+      stringAlpha = carryAlpha;
       // a touch bigger while still carrying it in, easing back to true size right as it
       // arrives — gives the entrance some weight instead of feeling flat
       enterBoost = 1 + 0.15 * (1 - p);
     } else if (t < ENTER_MS + HOLD_MS) {
-      // in place, string still fully visible — the real Rakhi fades in alongside it
+      // placed: everything docked and fully visible for a beat (the "cinch" moment), then the
+      // string lets go — fades out in the last stretch of the hold, before the hand ever moves
       shift = 0;
       carryAlpha = 1;
-      rakhiAlpha = (t - ENTER_MS) / HOLD_MS;
-      if (!holdHapticFired) { holdHapticFired = true; hapticPulse(40); } // the "cinch" moment
+      rakhiAlpha = 1;
+      rakhiShift = 0;
+      const holdT = t - ENTER_MS;
+      const fadeStart = HOLD_MS - STRING_FADE_MS;
+      stringAlpha = holdT < fadeStart ? 1 : Math.max(0, 1 - (holdT - fadeStart) / STRING_FADE_MS);
+      if (!holdHapticFired) { holdHapticFired = true; hapticPulse(40); }
     } else {
-      // only now does the hand start leaving — string fades out WITH it, never before
+      // the string is already gone by now — just the bare hand retreating, empty-handed;
+      // the Rakhi stays put on the wrist, untouched by the hand's departure
       const p = easeInOutCubic((t - ENTER_MS - HOLD_MS) / EXIT_MS);
       shift = offscreen * p;
       carryAlpha = 1 - p;
       rakhiAlpha = 1;
+      rakhiShift = 0;
+      stringAlpha = 0;
     }
 
     // a small pop-and-settle as the real Rakhi lands, synced to its own fade-in — makes the
     // "it's tied" moment feel like it landed with some weight instead of just fading in flat
     const rakhiBounce = 1 + 0.1 * Math.sin(Math.min(1, rakhiAlpha) * Math.PI);
-    drawRakhiAt(smooth, rakhiAlpha, rakhiBounce);
-    // the string only travels WITH the hand on the way in — once docked, it stays parked on
-    // the wrist (shift stays 0) and simply fades out with carryAlpha, so it reads as wrapping
-    // onto the wrist rather than being carried back off by the retreating hand
-    const stringShift = t < ENTER_MS ? shift : 0;
-    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, handRotation, stringShift * travelDir.x, stringShift * travelDir.y, carryAlpha);
+    drawRakhiAt(smooth, rakhiAlpha, rakhiBounce, rakhiShift * travelDir.x, rakhiShift * travelDir.y);
+    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, handRotation, shift * travelDir.x, shift * travelDir.y, stringAlpha);
     drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale * enterBoost, handRotation, shift * travelDir.x, shift * travelDir.y, carryAlpha);
   }
 
@@ -1367,22 +1382,16 @@
       ctx.shadowBlur = 0;
     }
 
-    if (captionBar.style.display !== 'none' && (toName || note || fromName)) {
+    if (captionBar.style.display !== 'none' && (note || fromName)) {
       let y = (92 + 16) * s;
       const maxWidth = canvas.width * 0.72;
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 8 * s;
-      if (toName) {
-        ctx.font = `700 ${13 * s}px 'Martian Mono', monospace`;
-        ctx.fillStyle = '#f7d878';
-        ctx.fillText('To ' + toName, canvas.width / 2, y);
-        y += 20 * s;
-      }
       ctx.fillStyle = '#fffaf1';
       if (note) {
-        ctx.font = `400 ${13 * s}px 'Martian Mono', monospace`;
-        y = wrapCanvasText(note, canvas.width / 2, y, maxWidth, 19 * s);
+        ctx.font = `italic 500 ${16 * s}px 'Cormorant Garamond', serif`;
+        y = wrapCanvasText(note, canvas.width / 2, y, maxWidth, 22 * s);
       }
       if (fromName) {
         ctx.globalAlpha = 0.75;
