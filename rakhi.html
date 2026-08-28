@@ -524,12 +524,14 @@
 
   #captionBar {
     position: absolute;
-    /* real number, not a guess: the danglers render at up to 135px wide, and the asset's own
-       677:430 aspect ratio makes that ~205px tall — taller than the board itself, and this was
-       still only cleared for the board's height, not the danglers' */
-    top: max(220px, calc(env(safe-area-inset-top) + 204px));
-    left: 16px;
-    right: 16px;
+    /* just clears the board's own height now — the danglers are handled by width, not height,
+       see left/right below, so the note no longer needs to drop all the way past them */
+    top: max(140px, calc(env(safe-area-inset-top) + 124px));
+    /* narrower instead of pushed down — the danglers occupy the outer 30vw on each side, so
+       staying inside that keeps the note clear of them horizontally without wasting vertical
+       space getting past their full height */
+    left: 32vw;
+    right: 32vw;
     text-align: center;
     padding: 0 14px;
     font-size: 12px;
@@ -665,8 +667,16 @@
      old arch-shaped graphic this replaced, so it isn't hidden here). */
   @media (min-width: 700px) {
     #scanFrame { width: 42vw; max-width: 480px; height: 42vh; max-height: 340px; }
-    /* the reveal placard/danglers use the mobile-approved sizing here for now — desktop gets
-       its own pass separately, per her explicit "handle mobile first" instruction */
+    /* there's real room on desktop that the mobile-tuned sizing doesn't use — bigger
+       danglers/board/text, not just the same assets stretched */
+    #revealMark .dangler { width: 16vw; max-width: 220px; }
+    #revealMark .placard { padding: 18px 28px 20px; }
+    #revealMark .happy { font-size: 18px; }
+    #revealMark .dmLine { width: 14px; }
+    #revealMark .dmDot.sm { width: 4px; height: 4px; }
+    #revealMark .dmDot.lg { width: 7px; height: 7px; }
+    #revealMark .big { font-size: 36px; }
+    #captionBar { left: 22vw; right: 22vw; font-size: 14px; }
   }
 </style>
 </head>
@@ -1179,7 +1189,6 @@
         } else if (now - confirmedStartAt > CONFIRM_MS && (assetsReady || now - confirmedStartAt > CONFIRM_MS + 5000)) {
           arState = 'tying';
           tyingStartAt = now;
-          handRotationBase = Math.round(smooth.angle / Math.PI) * Math.PI;
           holdHapticFired = false;
           scanFrame.classList.remove('show', 'confirmed');
           scanFrameText.classList.remove('show');
@@ -1292,55 +1301,24 @@
     ctx.restore();
   }
 
-  // hands-pair.png is two hands/arms that converge to a shared pinch point near the TOP of the
-  // image, with their elbows diverging toward the bottom-left and bottom-right corners — a "V"
-  // shape designed to read correctly when it's held close to upright. A live wrist can be tilted
-  // to any angle though, and rotating a "V" a long way from upright doesn't just tilt it — past
-  // ~45° the native left/right spread between the two hands starts projecting onto the vertical
-  // screen axis instead, so the two pinch points visually separate and drift apart along the
-  // real arm instead of staying together. There's no way to keep the hand piece perfectly
-  // matched to every possible wrist angle AND keep it looking like one cohesive gesture, so this
-  // damps rotation toward whichever of "upright" or "upside-down" (0 or 180°, both safe — the
-  // spread stays horizontal either way) is closer, keeping the two hands visually together even
-  // at odd wrist angles, at the cost of not perfectly tracking extreme tilts.
+  // ARCHITECTURE, deliberately simple after three rounds of trying to make the hand rotate to
+  // match the live wrist and breaking a different way each time: hands-pair.png is one flat
+  // image, and there is no rotation-matching scheme that makes a flat "V" of two hands look
+  // right at every possible live wrist angle — past ~45° from upright its own left/right spread
+  // starts projecting onto the vertical axis, and the two hands visually separate along the
+  // real arm. Every fix so far kept trying to solve that; this one sidesteps it instead.
   //
-  // IMPORTANT: which of the two safe angles (0 or 180°) counts as "nearest" is picked ONCE, at
-  // the start of each tie-in (handRotationBase, set alongside tyingStartAt), NOT recomputed every
-  // frame. Recomputing it every frame is a real bug we shipped and then caught: "nearest safe
-  // angle" flips a full ~180° the instant live rotation crosses the 90°/270° midpoint — and a
-  // wrist held roughly sideways sits RIGHT at that midpoint, so tiny live tracking jitter around
-  // it made the hand visibly snap to face the opposite way, sometimes mid-animation. Locking the
-  // choice once per tie-in makes rotation change continuously for that whole ~4.6s animation, at
-  // the cost of only comparing tie-ins to each other, never within one.
-  // the hand piece now always travels in dead horizontal (see travelDir below) — so it stays
-  // fully upright/horizontal too, matching its own straight travel path exactly, rather than
-  // tilting to chase the live wrist angle while still moving in a flat line. The real Rakhi
-  // (drawRakhiAt) is unaffected and still uses the true live rotation.
-  // LOCKED INVARIANT, do not change independently of each other again — this is the third
-  // time this exact system has broken because a fix touched ONE of these three things without
-  // the other two:
-  //   1. dampedHandRotation must be a PARTIAL damping toward the locked base (not the raw live
-  //      angle, and not a pure lock with zero live-following either).
-  //   2. the hand's travel direction (see elbowTravelDir below) must be DERIVED FROM this same
-  //      damped rotation, never a separate fixed direction and never the raw live angle.
-  //   3. cornerClearScale must be called with this same damped rotation.
-  // Rotation and direction sharing one source is what keeps the hand traveling in a straight
-  // line consistent with its own tilt ("parallel"); a fixed direction with an adaptive rotation
-  // (or vice versa) is exactly what produced "hand coming from a weird angle." The one-time
-  // lock of the base (not recomputed every frame) is what prevents the ~180 degree snap when
-  // live tracking crosses the 90/270 boundary mid-animation — that was a different, earlier bug.
-  // If any of these three needs to change, change what handRotationBase itself is computed as,
-  // not this function or elbowTravelDir in isolation.
-  let handRotationBase = 0;
-  function dampedHandRotation(rotation) {
-    let residual = rotation - handRotationBase;
-    residual = ((residual + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-    return handRotationBase + residual * 0.3;
-  }
+  // The hand (and the string it's carrying) now ALWAYS enters from the same fixed angle —
+  // bottom-right corner — never derived from live tracking at all. It can't ever look broken,
+  // because it never attempts to match anything variable. Only the Rakhi itself (drawRakhiAt,
+  // untouched by any of this) rotates to the true live wrist angle, which it already did
+  // correctly the entire time — a small, roughly circular medallion has never had this problem.
+  // Do not reintroduce live-angle-following on the hand/string rotation; that is the exact
+  // thing that has broken three times.
+  const FIXED_HAND_ROTATION = -Math.PI / 4; // "V" tilted so it travels in from bottom-right
 
   // the piece always exits/enters along its OWN elbow-pointing direction (local "down", i.e.
-  // away from the pivot toward the sleeves), derived from the SAME handRotation used for the
-  // docked orientation — see the locked-invariant comment above dampedHandRotation.
+  // away from the pivot toward the sleeves) — now always the same fixed direction, see above.
   function elbowTravelDir(handRotation) {
     return { x: -Math.sin(handRotation), y: Math.cos(handRotation) };
   }
@@ -1387,9 +1365,8 @@
     // wherever it currently is rather than a point captured back at animation start
     const anchor = { x: smooth.x, y: smooth.y };
     const rotation = smooth.angle;
-    // the hand+string pieces use a damped rotation (see dampedHandRotation) so they stay
-    // visually cohesive at any wrist angle — the real Rakhi below still uses the true rotation
-    const handRotation = dampedHandRotation(rotation);
+    // fixed, not derived from live tracking at all — see the ARCHITECTURE comment above
+    const handRotation = FIXED_HAND_ROTATION;
     const travelDir = elbowTravelDir(handRotation);
     const handLayout = { dx: -HANDS_PAIR.pivotX, dy: -HANDS_PAIR.pivotY, w: HANDS_PAIR.nativeW, h: HANDS_PAIR.nativeH };
 
@@ -1453,7 +1430,10 @@
     // "it's tied" moment feel like it landed with some weight instead of just fading in flat
     const rakhiBounce = 1 + 0.1 * Math.sin(Math.min(1, rakhiAlpha) * Math.PI);
     drawRakhiAt(smooth, rakhiAlpha, rakhiBounce, rakhiShift * travelDir.x, rakhiShift * travelDir.y);
-    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, handRotation, shift * travelDir.x, shift * travelDir.y, stringAlpha);
+    // the string's layout offset is defined relative to the Rakhi's own composite center, and
+    // it has to stay visually attached to the Rakhi (which always uses the true wrist angle) —
+    // not to the hand's fixed rotation, which is what was making the two look misaligned
+    drawPiece(design.stringPair, stringPairImg, anchor, stringScale, rotation, shift * travelDir.x, shift * travelDir.y, stringAlpha);
     drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale * enterBoost, handRotation, shift * travelDir.x, shift * travelDir.y, carryAlpha);
   }
 
@@ -1617,8 +1597,8 @@
     }
 
     if (captionBar.style.display !== 'none' && (note || fromName)) {
-      let y = (220 + 16) * s; // matches #captionBar's live top offset, see its CSS comment
-      const maxWidth = canvas.width * 0.72;
+      let y = (140 + 16) * s; // matches #captionBar's live top offset, see its CSS comment
+      const maxWidth = canvas.width * 0.36; // matches #captionBar's live left/right:32vw insets
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 8 * s;
@@ -1667,7 +1647,6 @@
     if (arState !== 'steady' || !smooth) return;
     arState = 'tying';
     tyingStartAt = performance.now();
-    handRotationBase = Math.round(smooth.angle / Math.PI) * Math.PI;
     holdHapticFired = false;
     // hide the celebration chrome again for the replay — same "clear during placement" rule
     document.getElementById('revealMark').classList.remove('show');
@@ -1854,7 +1833,6 @@
       lastSeenAt = performance.now();
       arState = 'tying';
       tyingStartAt = performance.now();
-      handRotationBase = Math.round(computeTransform(fake).angle / Math.PI) * Math.PI;
       holdHapticFired = false;
 
       function debugLoop() {
