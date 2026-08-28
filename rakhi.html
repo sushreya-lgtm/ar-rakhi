@@ -1189,8 +1189,8 @@
 
   // draws one v2 piece (hand or string). Its DOCKED position rotates with the wrist (so it
   // lines up with the Rakhi once arrived); worldShiftX/Y is a plain screen-space offset applied
-  // AFTER that rotation — travel direction is whatever the caller passes in (see
-  // elbowTravelDir below), not tied to the rotation used for the docked position itself.
+  // AFTER that rotation — travel direction is a fixed constant the caller passes in, not tied
+  // to the rotation used for the docked position itself.
   function drawPiece(layout, img, anchor, scale, rotation, worldShiftX, worldShiftY, alpha) {
     if (!img || alpha <= 0) return;
     const isCanvas = img instanceof HTMLCanvasElement;
@@ -1236,13 +1236,6 @@
     let residual = rotation - handRotationBase;
     residual = ((residual + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
     return handRotationBase + residual * 0.3;
-  }
-
-  // the piece always exits/enters along its OWN elbow-pointing direction (local "down", i.e.
-  // away from the pivot toward the sleeves) rotated to match — never an arbitrary left/right
-  // pick independent of how the piece is actually oriented on screen
-  function elbowTravelDir(handRotation) {
-    return { x: -Math.sin(handRotation), y: Math.cos(handRotation) };
   }
 
   // The sleeve end of hands-pair.png is a hard rectangle cut, not a natural taper — so instead
