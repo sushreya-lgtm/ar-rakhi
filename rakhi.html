@@ -162,6 +162,8 @@
     border-radius: 999px;
     padding: 14px 28px;
     cursor: pointer;
+    margin-bottom: 32px;
+    flex-shrink: 0;
   }
   .btn:active { transform: scale(0.98); }
   .privacy-note {
@@ -172,6 +174,7 @@
     margin-top: auto;
     padding-top: 24px;
     border-top: 1px solid var(--line);
+    flex-shrink: 0;
   }
   #errorBox {
     display: none;
@@ -1285,10 +1288,22 @@
     const words = text.split(' ');
     let line = '';
     for (let i = 0; i < words.length; i++) {
-      const testLine = line + words[i] + ' ';
+      let word = words[i];
+      // a single space-less "word" can itself be wider than maxWidth (e.g. a long typed run
+      // with no spaces) — ctx.fillText never wraps on its own, so break it character-by-character,
+      // the same way CSS overflow-wrap:anywhere handles this for the live DOM captionBar/senderNote
+      while (ctx.measureText(word).width > maxWidth) {
+        let cut = word.length;
+        while (cut > 1 && ctx.measureText(word.slice(0, cut)).width > maxWidth) cut--;
+        if (line) { ctx.fillText(line.trim(), x, y); y += lineHeight; line = ''; }
+        ctx.fillText(word.slice(0, cut), x, y);
+        y += lineHeight;
+        word = word.slice(cut);
+      }
+      const testLine = line + word + ' ';
       if (line && ctx.measureText(testLine).width > maxWidth) {
         ctx.fillText(line.trim(), x, y);
-        line = words[i] + ' ';
+        line = word + ' ';
         y += lineHeight;
       } else {
         line = testLine;
