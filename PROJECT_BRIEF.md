@@ -1,54 +1,50 @@
-# AR Rakhi — Project Brief
+# dhaaga (AR Rakhi) — Project Brief
 
-**Deadline:** Rakhi is 2026-08-28 — this needs to be live and shareable by tomorrow.
-**Type:** General shareable tool (anyone can open it, pick a Rakhi, personalize, send a link to anyone).
+**Status:** Live for Rakhi 2026-08-28. Ongoing — more designs and fixes will keep landing after launch.
 
 ## What it is
-A "Digital Bouquet"-style emotional micro-gift, but AR: sender picks an illustrated Rakhi from a
-gallery and adds a name/note; recipient opens the link on their phone, points the camera at their
-wrist, and the Rakhi anchors live onto their wrist via browser-based hand tracking.
+Send an AR Rakhi that ties itself onto the recipient's wrist live, through their phone camera —
+no app install. Sender picks a design + adds a note on the home page, gets a shareable link;
+recipient opens it on their phone, points the camera at their wrist, and the Rakhi anchors and
+ties on live via in-browser hand tracking.
 
-## Stack decision (locked, don't re-litigate mid-build)
-- **No native app, no Expo.** Expo Go can't run real ARKit/ARCore hand tracking (needs a custom
-  EAS dev-client build — days, not hours) and forces an install, which kills the "just a link"
-  emotional-gift use case.
-- **Plain web app**, same pattern as `Social Projects/mateo-bouquet` (single-file-ish static
-  HTML/CSS/JS, no build step, deployed as a link via Unravel Powers).
-- **AR = MediaPipe hand-landmark detection in-browser** (`@mediapipe/tasks-vision` HandLandmarker,
-  loaded via CDN, runs client-side via WebAssembly). Detects the wrist landmark from the live
-  camera feed; a canvas overlay anchors + rotates the chosen Rakhi graphic to it in real time.
-  No native AR APIs involved — this is what makes "AR on a link, no install" possible.
-- **Rakhi art = illustrated 2D/layered PNGs**, not 3D models. A sculpted 3D asset pipeline is not
-  achievable by tomorrow; a well-designed flat illustration that tracks and rotates with the wrist
-  reads as magic without that cost. Revisit 3D later if this becomes a bigger thing.
+## Stack (locked)
+- Plain static web app, no build step, no native app, no Expo.
+- AR = `@mediapipe/tasks-vision` HandLandmarker running client-side via WebAssembly. Detects wrist
+  + hand landmarks from the live camera feed; a canvas overlay anchors, rotates, and scales the
+  Rakhi + tying-hands illustration to match, frame by frame.
+- Rakhi art = her real illustrated PNGs (not AI-generated, not 3D).
+- **Zero backend, by design.** All sender data (recipient name, note, sender name, design choice)
+  lives entirely in the shareable link's URL query string — no account, no database, no server
+  logic. This was reconsidered once (to fix long notes → long links) and deliberately reverted:
+  she chose to keep it simple over adding Firestore. Don't resurface that unless she raises it.
 
-## v1 scope (tonight)
-1. **Sender flow:** landing page → pick 1 of ~3-4 starter Rakhi designs → optional name/note →
-   generate a shareable link.
-2. **Recipient flow:** open link → camera permission prompt (with plain-language privacy note) →
-   point at wrist → Rakhi anchors and animates on (thread-tie shimmer) → screenshot-able moment →
-   sender's name/note shown.
-3. Mobile-first only (this is a phone-camera experience; desktop can show a "open on your phone"
-   message).
+## Pages
+- `index.html` — logo, hero, steps, Rakhi picker, note form, link generator, footer.
+- `rakhi.html` — the AR camera experience (scan → tie-in animation → steady state → save/replay).
+- `privacy.html` — honest policy matching the app's actual (zero) data collection.
 
-## Explicitly NOT in v1 (say so if asked, don't silently build it)
-- Account system / saved history of sent Rakhis.
-- 3D modeled/cloth-simulated Rakhis.
-- Multiple hands / tying-animation physics.
-- Native app version.
-
-## Assets
-Starter Rakhi illustrations generated via `generate_image` (Unravel Powers), stored in `assets/`.
-Sushreya can swap in her own art later — nothing in the AR anchoring logic should assume a specific
-image beyond "transparent PNG, wrist-anchored, front-facing."
-
-## Security
-Hand-tracking runs entirely client-side (WebAssembly in-browser) — camera video is never uploaded
-or stored anywhere. State this plainly on the camera-permission screen. Run the mandatory security
-scan before any deploy, same as every other live link out of this project (per
-`~/Desktop/AI project/process/DESIGN_TO_CODE_INITIALIZATION.md` Phase 0 spirit, scoped down since
-this isn't a dev-handoff project).
+## Current designs
+Two: **Floral & Radiant**, **Sleek Evil Eye**. A "More designs on the way" note sits under the
+picker on the home page — more will be added over time, no code changes needed beyond adding a
+new card + composite asset + `DESIGNS` entry in `rakhi.html`.
 
 ## Deploy
-Deploy via Unravel Powers (`mcp__unravel-powers__deploy`), same as other live-preview links from
-this account. Track link expiry — this is meant to be alive through the Rakhi weekend, not forever.
+GitHub Pages, `sushreya-lgtm/ar-rakhi` (personal GitHub, kept off work infra deliberately — this
+is a personal gift project). HTTPS required for camera access, which Pages gives for free.
+Live at **https://sushreya-lgtm.github.io/ar-rakhi/**
+
+Push to `main`, GitHub Pages auto-deploys. Note: Pages sits behind a CDN with a few minutes of
+edge caching — if a change doesn't appear to be live, verify with `curl` before assuming it's a
+code bug.
+
+## Not in v1 (revisit later if it becomes worth it)
+- Account system / saved history of sent Rakhis.
+- 3D modeled Rakhis.
+- More than one Rakhi design entry point per link (one design per link, chosen at send time).
+
+## Known gap
+Everything is verified via a `?debug=1` fabricated-hand-pose harness (see `rakhi.html`) plus real
+device screenshots/recordings she's sent — there's no automated way to click through the native
+camera-permission dialog, so any new AR-facing change should still get a real phone check before
+being called fully done.
