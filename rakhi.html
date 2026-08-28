@@ -423,24 +423,30 @@
   }
   #revealMark.show { opacity: 0.97; }
 
+  /* pins/strings used to be positioned at a fixed 33%/67% of the FULL VIEWPORT, while the
+     board itself is width:fit-content (sized to the text, not the viewport) — on a narrow
+     phone those two roughly lined up by coincidence, but on a wide desktop viewport 33% of
+     the screen sits nowhere near the actual (much narrower) board, so the strings looked
+     disconnected from it entirely. Nested inside .placardWrap now, positioned relative to the
+     board's own width instead, so they stay anchored to its actual corners at any screen size. */
   #revealMark .hangPin {
     position: absolute;
-    top: max(18px, env(safe-area-inset-top));
+    top: -24px;
     width: 7px; height: 7px;
     border-radius: 50%;
     background: #f2c14e;
     box-shadow: 0 0 0 2px rgba(0,0,0,0.25);
   }
-  #revealMark .hangPin.left { left: 33%; }
-  #revealMark .hangPin.right { right: 33%; }
+  #revealMark .hangPin.left { left: 8%; }
+  #revealMark .hangPin.right { right: 8%; }
   #revealMark .hangString {
     position: absolute;
-    top: calc(max(18px, env(safe-area-inset-top)) + 3px);
-    width: 1.5px; height: 9px;
+    top: -21px;
+    width: 1.5px; height: 21px;
     background: rgba(255,250,241,0.6);
   }
-  #revealMark .hangString.left { left: calc(33% + 3.5px); }
-  #revealMark .hangString.right { right: calc(33% + 3.5px); }
+  #revealMark .hangString.left { left: calc(8% + 3.5px); }
+  #revealMark .hangString.right { right: calc(8% + 3.5px); }
 
   /* her real dangler ornament art, mirrored, sized so its outer edge meets the screen edge */
   #revealMark .dangler {
@@ -463,6 +469,7 @@
 
   #revealMark .placardWrap {
     /* horizontally centered by the flex parent now, not left:50%/transform */
+    position: relative; /* so the pins/strings nested inside anchor to the board, not the viewport */
     margin-top: calc(max(18px, env(safe-area-inset-top)) + 12px);
     width: fit-content;
     /* not a binding constraint under normal use — a safety net only, now that .big's font-size
@@ -679,6 +686,7 @@
     /* bigger board on desktop needs more clearance too, plus a bit more breathing room than
        the bare minimum, and the note itself reads better a size up given the extra space */
     #captionBar { left: 22vw; right: 22vw; font-size: 17px; top: max(190px, calc(env(safe-area-inset-top) + 174px)); }
+    .sparkles .spark { font-size: 18px; }
   }
 </style>
 </head>
@@ -743,11 +751,11 @@
   </div>
 
   <div id="revealMark">
-    <div class="hangPin left"></div><div class="hangPin right"></div>
-    <div class="hangString left"></div><div class="hangString right"></div>
     <img class="dangler left" id="danglerLeft" alt="">
     <img class="dangler right" id="danglerRight" alt="">
     <div class="placardWrap">
+      <div class="hangPin left"></div><div class="hangPin right"></div>
+      <div class="hangString left"></div><div class="hangString right"></div>
       <div class="placard">
         <div class="happyRow">
           <span class="dividerMark">
@@ -1522,22 +1530,6 @@
     if (mark.classList.contains('show')) {
       const topPx = 18 * s;
 
-      const pinLX = canvas.width * 0.33, pinRX = canvas.width * 0.67;
-      ctx.fillStyle = '#f2c14e';
-      [pinLX, pinRX].forEach(x => {
-        ctx.beginPath();
-        ctx.arc(x, topPx, 3.5 * s, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.strokeStyle = 'rgba(255,250,241,0.6)';
-      ctx.lineWidth = 1.5 * s;
-      [pinLX, pinRX].forEach(x => {
-        ctx.beginPath();
-        ctx.moveTo(x, topPx + 3 * s);
-        ctx.lineTo(x, topPx + 12 * s);
-        ctx.stroke();
-      });
-
       const danglerLeftImg = document.getElementById('danglerLeft');
       const danglerRightImg = document.getElementById('danglerRight');
       const danglerW = Math.min(canvas.width * 0.30, 135 * s);
@@ -1575,6 +1567,25 @@
       const placardX = canvas.width / 2 - placardW / 2;
       const placardY = topPx + 12 * s;
       const radius = 3 * s;
+
+      // pins/strings anchored to the board's own actual bounds (just computed above), not a
+      // fixed fraction of the canvas — matches the live DOM fix, same underlying bug otherwise
+      const pinLX = placardX + placardW * 0.08, pinRX = placardX + placardW * 0.92;
+      const pinY = placardY - 24 * s;
+      ctx.fillStyle = '#f2c14e';
+      [pinLX, pinRX].forEach(x => {
+        ctx.beginPath();
+        ctx.arc(x, pinY, 3.5 * s, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.strokeStyle = 'rgba(255,250,241,0.6)';
+      ctx.lineWidth = 1.5 * s;
+      [pinLX, pinRX].forEach(x => {
+        ctx.beginPath();
+        ctx.moveTo(x, pinY + 3 * s);
+        ctx.lineTo(x, placardY);
+        ctx.stroke();
+      });
 
       ctx.fillStyle = '#8f2419';
       ctx.beginPath();
