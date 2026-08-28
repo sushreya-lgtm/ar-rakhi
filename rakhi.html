@@ -434,7 +434,9 @@
     left: 50%;
     transform: translateX(-50%);
     width: fit-content;
-    max-width: 76vw;
+    /* not a binding constraint under normal use — a safety net only, now that .big's font-size
+       is itself responsive (see below) and can't outgrow the screen on its own */
+    max-width: 94vw;
     animation: floatY 5s ease-in-out infinite;
   }
   #revealMark .placard {
@@ -478,7 +480,11 @@
   #revealMark .big {
     display: block;
     font-family: 'Rozha One', serif;
-    font-size: 26px;
+    /* the real bug behind the placard overflowing/looking off-center on a narrow phone: a
+       fixed px size inside a max-width-capped, nowrap box doesn't shrink to fit — it just
+       overflows the box uncontained. A responsive size can never need more room than the
+       screen actually has, so it fits by construction instead of by hoping the cap holds. */
+    font-size: clamp(19px, 6vw, 27px);
     line-height: 1;
     white-space: nowrap;
     color: #ffd447;
@@ -1272,9 +1278,33 @@
   // fully upright/horizontal too, matching its own straight travel path exactly, rather than
   // tilting to chase the live wrist angle while still moving in a flat line. The real Rakhi
   // (drawRakhiAt) is unaffected and still uses the true live rotation.
+  // LOCKED INVARIANT, do not change independently of each other again — this is the third
+  // time this exact system has broken because a fix touched ONE of these three things without
+  // the other two:
+  //   1. dampedHandRotation must be a PARTIAL damping toward the locked base (not the raw live
+  //      angle, and not a pure lock with zero live-following either).
+  //   2. the hand's travel direction (see elbowTravelDir below) must be DERIVED FROM this same
+  //      damped rotation, never a separate fixed direction and never the raw live angle.
+  //   3. cornerClearScale must be called with this same damped rotation.
+  // Rotation and direction sharing one source is what keeps the hand traveling in a straight
+  // line consistent with its own tilt ("parallel"); a fixed direction with an adaptive rotation
+  // (or vice versa) is exactly what produced "hand coming from a weird angle." The one-time
+  // lock of the base (not recomputed every frame) is what prevents the ~180 degree snap when
+  // live tracking crosses the 90/270 boundary mid-animation — that was a different, earlier bug.
+  // If any of these three needs to change, change what handRotationBase itself is computed as,
+  // not this function or elbowTravelDir in isolation.
   let handRotationBase = 0;
   function dampedHandRotation(rotation) {
-    return handRotationBase;
+    let residual = rotation - handRotationBase;
+    residual = ((residual + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    return handRotationBase + residual * 0.3;
+  }
+
+  // the piece always exits/enters along its OWN elbow-pointing direction (local "down", i.e.
+  // away from the pivot toward the sleeves), derived from the SAME handRotation used for the
+  // docked orientation — see the locked-invariant comment above dampedHandRotation.
+  function elbowTravelDir(handRotation) {
+    return { x: -Math.sin(handRotation), y: Math.cos(handRotation) };
   }
 
   // The sleeve end of hands-pair.png is a hard rectangle cut, not a natural taper — so instead
@@ -1322,9 +1352,7 @@
     // the hand+string pieces use a damped rotation (see dampedHandRotation) so they stay
     // visually cohesive at any wrist angle — the real Rakhi below still uses the true rotation
     const handRotation = dampedHandRotation(rotation);
-    // always travels straight in from the right, full stop — a fixed direction can never look
-    // different from one run to the next, unlike one derived from live wrist rotation
-    const travelDir = { x: 1, y: 0 };
+    const travelDir = elbowTravelDir(handRotation);
     const handLayout = { dx: -HANDS_PAIR.pivotX, dy: -HANDS_PAIR.pivotY, w: HANDS_PAIR.nativeW, h: HANDS_PAIR.nativeH };
 
     // both hands are one rigid piece — pivot (the point between the two fingertips) is what
@@ -1478,8 +1506,12 @@
         ctx.restore();
       }
 
+      // .big's font-size is a responsive clamp() in the live DOM (see its CSS) — read the
+      // actual rendered size from the live element rather than hardcoding a px value here,
+      // so the saved photo always matches whatever size the clamp actually resolved to
+      const liveBigSizePx = parseFloat(getComputedStyle(document.querySelector('#revealMark .big')).fontSize) || 26;
       const happyFont = `italic 600 ${14 * s}px 'Cormorant Garamond', serif`;
-      const bigFont = `${26 * s}px 'Rozha One', serif`;
+      const bigFont = `${liveBigSizePx * s}px 'Rozha One', serif`;
       ctx.font = bigFont;
       const bigWidth = ctx.measureText('Raksha Bandhan').width;
       ctx.font = happyFont;
@@ -1489,7 +1521,7 @@
       const contentWidth = Math.max(bigWidth, happyRowWidth);
       const padX = 20 * s, padTop = 12 * s, padBottom = 14 * s;
       const placardW = contentWidth + padX * 2;
-      const placardH = 16 * s + 26 * s + padTop + padBottom;
+      const placardH = 16 * s + liveBigSizePx * s + padTop + padBottom;
       const placardX = canvas.width / 2 - placardW / 2;
       const placardY = topPx + 12 * s;
       const radius = 3 * s;
