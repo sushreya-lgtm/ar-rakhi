@@ -12,7 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fdf2da;
@@ -30,7 +30,7 @@
     padding: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family: 'Martian Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     min-height: 100%;
     overflow-x: hidden;
   }
@@ -74,12 +74,34 @@
   .divider .dot.sm { width: 6px; height: 6px; }
   .divider .dot.lg { width: 11px; height: 11px; }
 
-  .explain {
+  .steps {
+    text-align: left;
+    max-width: 380px;
+    margin: 0 auto 48px;
+  }
+  .steps .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
     font-size: 12px;
     color: var(--muted);
-    line-height: 1.7;
-    max-width: 420px;
-    margin: 0 auto 48px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .steps .step:last-child { margin-bottom: 0; }
+  .steps .step-num {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .step-label {
@@ -142,7 +164,7 @@
   }
   .field input, .field textarea {
     width: 100%;
-    font-family: 'Martian Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     color: var(--ink);
     background: var(--card);
@@ -166,7 +188,7 @@
   .btn {
     display: inline-block;
     width: 100%;
-    font-family: 'Martian Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -241,27 +263,26 @@
     border-top: 1px solid var(--line);
     font-size: 11px;
     color: var(--muted);
-    line-height: 2;
   }
-  footer .made-by { margin-bottom: 10px; }
-  footer .made-by a { color: var(--ink); font-weight: 700; text-decoration: none; }
-  footer .made-by a:hover { color: var(--dhaaga-teal); }
-  footer .contact-label {
-    font-size: 9px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-top: 14px;
+  footer .footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
-  footer .contact-links { margin-top: 4px; }
-  footer .contact-links a {
+  footer .footer-links a {
     color: var(--muted);
     text-decoration: none;
     border-bottom: 1px dashed var(--line);
+    padding-bottom: 1px;
   }
-  footer .contact-links a:hover { color: var(--dhaaga-teal); border-color: var(--dhaaga-teal); }
-  footer .legal { margin-top: 16px; }
-  footer .legal a { color: var(--muted); text-decoration: underline; }
+  footer .footer-links a:hover { color: var(--dhaaga-teal); border-color: var(--dhaaga-teal); }
+  footer .footer-links .legal a { text-decoration: underline; border-bottom: none; }
+  footer .made-with-love {
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.85;
+  }
 
   /* desktop: a touch more breathing room, content stays centered/contained */
   @media (min-width: 700px) {
@@ -278,7 +299,11 @@
   <h1 class="hero-title">Send an AR Rakhi to your <strong>awesome sibling</strong></h1>
   <p class="hero-sub">wherever they are, however far.</p>
   <div class="divider"><span class="line"></span><span class="dot sm"></span><span class="dot lg"></span></div>
-  <p class="explain">An AR Rakhi is one they open right on their phone — they point the camera at their wrist, and it ties itself on, live, right in front of them.</p>
+  <div class="steps">
+    <div class="step"><span class="step-num">1</span><span>They open the link right on their phone</span></div>
+    <div class="step"><span class="step-num">2</span><span>They point the camera at their wrist</span></div>
+    <div class="step"><span class="step-num">3</span><span>It ties itself on, live, right in front of them</span></div>
+  </div>
 
   <div class="step-label">Pick a Rakhi</div>
   <div class="gallery" id="gallery">
@@ -322,14 +347,13 @@
   <p class="note-privacy">Works best opened directly on a phone — the camera is used live, on-device,<br>to place the Rakhi. Nothing is ever uploaded or stored.</p>
 
   <footer>
-    <div class="made-by">Made with love and illustrations by <a href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Sushreya</a></div>
-    <div class="contact-label">Contact</div>
-    <div class="contact-links">
+    <div class="footer-links">
+      <a href="https://www.instagram.com/s___artt/" target="_blank" rel="noopener">Illustrations by Sushreyas</a>
+      <a href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Illustrations made by the Behance account</a>
       <a href="https://www.linkedin.com/in/sushreya-alwaysthinking/" target="_blank" rel="noopener">LinkedIn</a>
-      &nbsp;·&nbsp;
-      <a href="https://www.behance.net/sushreyabiswas" target="_blank" rel="noopener">Behance</a>
+      <span class="legal"><a href="privacy.html">Privacy Policy</a></span>
     </div>
-    <div class="legal"><a href="privacy.html">Privacy Policy</a></div>
+    <div class="made-with-love">Made with love ❤️</div>
   </footer>
 </div>
 
@@ -363,12 +387,16 @@
     noteCount.textContent = (140 - note.value.length) + ' characters left';
   });
 
+  // if they leave the note blank, the link should still carry something warmer than nothing —
+  // this is what actually shows on the receiver's screen, not just a hint they never typed over
+  const DEFAULT_NOTE = 'Happy Raksha Bandhan! Sending you lots of love with this one.';
+
   function buildLink() {
     const url = new URL('rakhi.html', window.location.href);
     url.searchParams.set('d', selectedId);
     if (toName.value.trim()) url.searchParams.set('t', toName.value.trim());
     if (fromName.value.trim()) url.searchParams.set('n', fromName.value.trim());
-    if (note.value.trim()) url.searchParams.set('m', note.value.trim());
+    url.searchParams.set('m', note.value.trim() || DEFAULT_NOTE);
     return url.toString();
   }
 

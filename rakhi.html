@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,500;1,600&family=Martian+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fdf2da;
@@ -28,7 +28,7 @@
     padding: 0;
     background: #000;
     color: var(--ink);
-    font-family: 'Martian Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     height: 100%;
     overflow: hidden;
   }
@@ -58,10 +58,10 @@
   }
 
   #mainHeading {
-    font-family: 'Fraunces', serif;
+    font-family: 'Cormorant Garamond', serif;
     font-weight: 600;
     font-style: italic;
-    font-size: 26px;
+    font-size: 30px;
     line-height: 1.3;
     color: var(--ink);
     max-width: 340px;
@@ -85,16 +85,6 @@
      (a URL, gibberish, no-space text) won't wrap at all by default and pushes the page wider
      than the viewport. overflow-wrap forces a break inside a "word" as a last resort, only once
      it's actually too long to fit — normal space-separated text still wraps normally first. */
-  #dearLine {
-    font-family: 'Fraunces', serif;
-    font-weight: 500;
-    font-style: italic;
-    font-size: 17px;
-    color: var(--ink);
-    max-width: 380px;
-    overflow-wrap: anywhere;
-    margin: 0 0 10px;
-  }
   #senderNote {
     font-size: 15px;
     color: var(--ink);
@@ -105,25 +95,64 @@
   }
   #senderNote .from-line {
     display: block;
-    font-family: 'Fraunces', serif;
+    font-family: 'Cormorant Garamond', serif;
     font-style: italic;
     font-size: 13px;
     color: var(--muted);
     overflow-wrap: anywhere;
     margin-top: 10px;
   }
-  .explainer {
+  .explainer-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 8px 0 14px;
+  }
+  /* decorative divider — echoes the line + two dots flanking the logo wordmark */
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 20px;
+  }
+  .divider .line { width: 34px; height: 1.5px; background: var(--dhaaga-teal); }
+  .divider .dot { border-radius: 50%; background: var(--dhaaga-teal); opacity: 0.8; }
+  .divider .dot.sm { width: 6px; height: 6px; }
+  .divider .dot.lg { width: 11px; height: 11px; }
+
+  .steps {
+    text-align: left;
+    max-width: 340px;
+    margin: 0 auto 28px;
+  }
+  .steps .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
     font-size: 12px;
     color: var(--muted);
-    line-height: 1.7;
-    max-width: 340px;
-    text-align: left;
-    margin: 8px 0 28px;
+    line-height: 1.6;
+    margin-bottom: 12px;
   }
-  .explainer strong { color: var(--ink); }
+  .steps .step:last-child { margin-bottom: 0; }
+  .steps .step-num {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   .btn {
     display: inline-block;
-    font-family: 'Martian Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -193,7 +222,7 @@
     border: none;
     background: rgba(58,31,26,0.5);
     color: #fffaf1;
-    font-family: 'Martian Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
@@ -302,10 +331,10 @@
   #festiveHeading.show { opacity: 0.95; }
   #festiveHeading .serif {
     display: block;
-    font-family: 'Fraunces', serif;
+    font-family: 'Cormorant Garamond', serif;
     font-weight: 600;
     font-style: italic;
-    font-size: 28px;
+    font-size: 32px;
     line-height: 1.2;
   }
   #festiveHeading .regular {
@@ -377,34 +406,36 @@
     50% { opacity: 1; transform: scale(1); }
   }
 
-  /* one-shot celebratory burst, fired once when the hand has fully receded — not a loop
-     like the sparkles, just a brief pop near each top corner */
+  /* one-shot celebratory burst, fired once when the hand has fully receded. Positioned live at
+     wherever the Rakhi actually landed (not a fixed spot) so it's impossible to miss — that's
+     exactly where the eye already is at that moment. Two staggered bursts, longer and bigger
+     than a typical "twinkle" so it actually reads as a celebration, not a blink-and-miss-it. */
   #firecrackers {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    height: 130px;
+    width: 0;
+    height: 0;
     z-index: 4;
     pointer-events: none;
   }
-  #firecrackers .burst { position: absolute; top: 40px; width: 0; height: 0; }
-  #firecrackers .burst.left { left: 12%; }
-  #firecrackers .burst.right { right: 12%; }
+  #firecrackers .burst { position: absolute; top: 0; left: 0; width: 0; height: 0; }
   #firecrackers .ray {
     position: absolute;
     left: 0;
     top: 0;
-    width: 3px;
-    height: 14px;
+    width: 4px;
+    height: 22px;
     border-radius: 2px;
     transform-origin: 50% 0;
     opacity: 0;
   }
-  #firecrackers.show .ray { animation: burstRay 0.9s ease-out forwards; }
+  #firecrackers.show .ray { animation: burstRay 1.3s ease-out forwards; }
+  #firecrackers.show .burst.second .ray { animation-delay: 0.18s; }
   @keyframes burstRay {
     0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scaleY(1); }
-    100% { opacity: 0; transform: rotate(var(--a)) translateY(30px) scaleY(0.6); }
+    55% { opacity: 1; }
+    100% { opacity: 0; transform: rotate(var(--a)) translateY(90px) scaleY(0.5); }
   }
 
   #bottomBar {
@@ -423,7 +454,7 @@
     border: none;
     border-radius: 999px;
     padding: 14px 22px;
-    font-family: 'Martian Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -472,17 +503,18 @@
 <div id="intro">
   <img class="dhaaga-logo-img" src="assets/dhaaga-logo.svg" alt="dhaaga">
 
-  <div id="mainHeading">Happy Raksha Bandhan</div>
+  <div id="mainHeading">Happy Raksha Bandhan,<br>here's a Rakhi for you</div>
 
   <img id="introImg" src="" alt="A Rakhi">
 
-  <div id="dearLine" style="display:none;"></div>
-  <div id="senderNote"></div>
+  <div id="senderNote" style="display:none;"></div>
 
-  <div class="explainer">
-    <strong>What's an AR Rakhi?</strong> Open your camera and hold your wrist inside the frame —
-    the Rakhi ties itself on, live, right on your screen. Once it's placed, drag to reposition it
-    or pinch to resize it.
+  <div class="explainer-label">What's an AR Rakhi?</div>
+  <div class="divider"><span class="line"></span><span class="dot sm"></span><span class="dot lg"></span></div>
+  <div class="steps">
+    <div class="step"><span class="step-num">1</span><span>Open your camera and hold your wrist inside the frame</span></div>
+    <div class="step"><span class="step-num">2</span><span>The Rakhi ties itself on, live, right on your screen</span></div>
+    <div class="step"><span class="step-num">3</span><span>Drag to reposition or pinch to resize once it's placed</span></div>
   </div>
 
   <button class="btn" id="startBtn">Open camera</button>
@@ -582,14 +614,14 @@
 
   document.getElementById('introImg').src = design.fullFile;
 
-  if (toName) {
-    const dearLine = document.getElementById('dearLine');
-    dearLine.textContent = 'Dear ' + toName + ',';
-    dearLine.style.display = 'block';
+  // the heading itself already says "here's a Rakhi for you" — this slot is only for the
+  // sender's actual written note, and only appears at all if they wrote one
+  if (note || fromName) {
+    const senderNote = document.getElementById('senderNote');
+    senderNote.innerHTML = escapeHtml(note)
+      + (fromName ? '<span class="from-line">— ' + escapeHtml(fromName) + '</span>' : '');
+    senderNote.style.display = 'block';
   }
-
-  document.getElementById('senderNote').innerHTML = escapeHtml(note || 'Here\'s a Rakhi')
-    + (fromName ? '<span class="from-line">— ' + escapeHtml(fromName) + '</span>' : '');
 
   if (toName || fromName || note) {
     const cap = document.getElementById('captionBar');
@@ -697,7 +729,7 @@
   }
   let holdHapticFired = false; // reset per tie-in, fires once when the Rakhi starts to "land"
 
-  function revealChrome() {
+  function revealChrome(anchorX, anchorY) {
     if (toName || fromName || note) captionBar.style.display = 'block';
     bottomBar.style.display = 'flex';
     sparkles.classList.add('show');
@@ -705,31 +737,50 @@
     document.getElementById('tasselLeft').classList.add('show');
     document.getElementById('tasselRight').classList.add('show');
     document.getElementById('cameraBackdrop').classList.add('show');
-    fireCrackers();
+    fireCrackers(anchorX, anchorY);
   }
 
-  // brief one-shot celebratory burst — small radiating dashes near the top corners,
-  // scale+fade once, not a looping effect like the sparkles
-  function fireCrackers() {
-    const burst = document.getElementById('firecrackers');
-    burst.classList.remove('show');
-    void burst.offsetWidth; // restart the animation on replay
-    burst.classList.add('show');
+  // converts a canvas-pixel point to the CSS-pixel point it actually appears at on screen —
+  // same math object-fit:cover uses internally, so a DOM element can be positioned to line up
+  // with something drawn on the canvas (the canvas's native resolution is the camera's, which
+  // is usually much larger than the CSS viewport)
+  function canvasToClient(cx, cy) {
+    const s = Math.max(window.innerWidth / canvas.width, window.innerHeight / canvas.height);
+    const offsetX = (window.innerWidth - canvas.width * s) / 2;
+    const offsetY = (window.innerHeight - canvas.height * s) / 2;
+    return { x: cx * s + offsetX, y: cy * s + offsetY };
   }
 
-  // build the firecracker rays once — two 8-ray bursts near the top corners
+  // brief one-shot celebratory burst, positioned live at wherever the Rakhi actually landed —
+  // not a fixed spot on screen — so it's impossible to miss, since that's exactly where the eye
+  // already is. Falls back to screen-center if no anchor is known (the no-hand-detected timeout).
+  function fireCrackers(anchorCanvasX, anchorCanvasY) {
+    const container = document.getElementById('firecrackers');
+    const pt = (anchorCanvasX != null)
+      ? canvasToClient(anchorCanvasX, anchorCanvasY)
+      : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    container.style.left = pt.x + 'px';
+    container.style.top = pt.y + 'px';
+    container.classList.remove('show');
+    void container.offsetWidth; // restart the animation on replay
+    container.classList.add('show');
+  }
+
+  // build the firecracker rays once — two staggered 10-ray bursts from the same point, offset
+  // in angle and time from each other so together they read as one full, layered pop
   (function initFirecrackers() {
     const container = document.getElementById('firecrackers');
-    const colors = ['#f2c14e', '#c73b2b', '#5c7a52'];
-    ['left', 'right'].forEach(side => {
+    const colors = ['#f2c14e', '#c73b2b', '#5c7a52', '#f2a33c'];
+    const rayCount = 10;
+    ['first', 'second'].forEach((which, groupIdx) => {
       const burst = document.createElement('div');
-      burst.className = 'burst ' + side;
-      for (let i = 0; i < 8; i++) {
+      burst.className = 'burst ' + which;
+      for (let i = 0; i < rayCount; i++) {
         const ray = document.createElement('span');
         ray.className = 'ray';
-        ray.style.setProperty('--a', (i * 45) + 'deg');
+        const angle = i * (360 / rayCount) + groupIdx * (360 / rayCount / 2);
+        ray.style.setProperty('--a', angle + 'deg');
         ray.style.background = colors[i % colors.length];
-        ray.style.animationDelay = (i * 0.02) + 's';
         burst.appendChild(ray);
       }
       container.appendChild(burst);
@@ -898,6 +949,7 @@
         } else if (now - confirmedStartAt > CONFIRM_MS) {
           arState = 'tying';
           tyingStartAt = now;
+          handRotationBase = Math.round(smooth.angle / Math.PI) * Math.PI;
           holdHapticFired = false;
           scanFrame.classList.remove('show', 'confirmed');
           scanFrameText.classList.remove('show');
@@ -1021,10 +1073,22 @@
   // damps rotation toward whichever of "upright" or "upside-down" (0 or 180°, both safe — the
   // spread stays horizontal either way) is closer, keeping the two hands visually together even
   // at odd wrist angles, at the cost of not perfectly tracking extreme tilts.
+  //
+  // IMPORTANT: which of the two safe angles (0 or 180°) counts as "nearest" is picked ONCE, at
+  // the start of each tie-in (handRotationBase, set alongside tyingStartAt), NOT recomputed every
+  // frame. Recomputing it every frame is a real bug we shipped and then caught: "nearest safe
+  // angle" flips a full ~180° the instant live rotation crosses the 90°/270° midpoint — and a
+  // wrist held roughly sideways sits RIGHT at that midpoint, so tiny live tracking jitter around
+  // it made the hand visibly snap to face the opposite way, sometimes mid-animation. Locking the
+  // choice once per tie-in makes rotation change continuously for that whole ~4.6s animation, at
+  // the cost of only comparing tie-ins to each other, never within one.
+  let handRotationBase = 0;
   function dampedHandRotation(rotation) {
-    const nearestSafe = Math.round(rotation / Math.PI) * Math.PI;
-    const residual = rotation - nearestSafe;
-    return nearestSafe + residual * 0.3;
+    // wrapped to (-PI, PI] so a wrist that drifts a lot mid-animation still damps toward the
+    // SHORT way round from the locked base, never the long way
+    let residual = rotation - handRotationBase;
+    residual = ((residual + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    return handRotationBase + residual * 0.3;
   }
 
   // the piece always exits/enters along its OWN elbow-pointing direction (local "down", i.e.
@@ -1138,9 +1202,86 @@
     drawPiece(handLayout, handsPairMasked || handsPairImg, anchor, handScale * enterBoost, handRotation, shift * travelDir.x, shift * travelDir.y, carryAlpha);
   }
 
-  captureBtn.addEventListener('click', () => {
+  // wraps text at word boundaries within maxWidth, drawing each line centered on x starting at
+  // y, advancing by lineHeight — returns the y position just after the last line drawn
+  function wrapCanvasText(text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + ' ';
+      if (line && ctx.measureText(testLine).width > maxWidth) {
+        ctx.fillText(line.trim(), x, y);
+        line = words[i] + ' ';
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line.trim(), x, y);
+    return y + lineHeight;
+  }
+
+  // "Save this moment" only captures what's actually drawn INTO the canvas (video + Rakhi +
+  // hand animation) — the festive heading, note, and gradient backdrop are separate DOM/CSS
+  // overlays layered on top, invisible to canvas.toBlob(). This redraws just those pieces
+  // directly onto the canvas, once, right before capture, so the saved photo matches what's
+  // actually on screen. The very next live frame overwrites this — it's not persistent state.
+  function drawCaptureOverlay() {
+    const s = canvas.width / window.innerWidth; // CSS px -> canvas px, same scale everywhere here
+    const backdrop = document.getElementById('cameraBackdrop');
+    if (backdrop.classList.contains('show') && backdrop.complete && backdrop.naturalWidth) {
+      ctx.globalAlpha = 0.55;
+      ctx.drawImage(backdrop, 0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1;
+    }
+
+    const heading = document.getElementById('festiveHeading');
+    if (heading.classList.contains('show')) {
+      const topPx = Math.max(18, 18) * s;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
+      ctx.shadowBlur = 10 * s;
+      ctx.fillStyle = '#fffaf1';
+      ctx.font = `italic 600 ${32 * s}px 'Cormorant Garamond', serif`;
+      ctx.fillText('Happy Raksha Bandhan', canvas.width / 2, topPx + 32 * s);
+      ctx.font = `700 ${12 * s}px 'DM Sans', sans-serif`;
+      ctx.fillText('STAY BLESSED', canvas.width / 2, topPx + 32 * s + 20 * s);
+      ctx.shadowBlur = 0;
+    }
+
+    if (captionBar.style.display !== 'none' && (toName || note || fromName)) {
+      let y = (92 + 16) * s;
+      const maxWidth = canvas.width * 0.72;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 8 * s;
+      if (toName) {
+        ctx.font = `700 ${13 * s}px 'DM Sans', sans-serif`;
+        ctx.fillStyle = '#f7d878';
+        ctx.fillText('To ' + toName, canvas.width / 2, y);
+        y += 20 * s;
+      }
+      ctx.fillStyle = '#fffaf1';
+      if (note) {
+        ctx.font = `400 ${13 * s}px 'DM Sans', sans-serif`;
+        y = wrapCanvasText(note, canvas.width / 2, y, maxWidth, 19 * s);
+      }
+      if (fromName) {
+        ctx.globalAlpha = 0.75;
+        ctx.font = `400 ${13 * s}px 'DM Sans', sans-serif`;
+        ctx.fillText('— ' + fromName, canvas.width / 2, y);
+        ctx.globalAlpha = 1;
+      }
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  captureBtn.addEventListener('click', async () => {
     flash.classList.add('on');
     setTimeout(() => { flash.classList.remove('on'); flash.classList.add('off'); }, 90);
+
+    await document.fonts.ready;
+    drawCaptureOverlay();
 
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'ar-rakhi.png', { type: 'image/png' });
@@ -1165,6 +1306,7 @@
     if (arState !== 'steady' || !smooth) return;
     arState = 'tying';
     tyingStartAt = performance.now();
+    handRotationBase = Math.round(smooth.angle / Math.PI) * Math.PI;
     holdHapticFired = false;
     // hide the celebration chrome again for the replay — same "clear during placement" rule
     document.getElementById('festiveHeading').classList.remove('show');
@@ -1319,6 +1461,7 @@
       lastSeenAt = performance.now();
       arState = 'tying';
       tyingStartAt = performance.now();
+      handRotationBase = Math.round(computeTransform(fake).angle / Math.PI) * Math.PI;
       holdHapticFired = false;
 
       function debugLoop() {
