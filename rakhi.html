@@ -414,6 +414,12 @@
     transition: opacity 1.2s ease;
     pointer-events: none;
     z-index: 4;
+    /* flex centering for the placard instead of left:50%/transform — more robust against any
+       containing-block quirk than the transform trick; pins/strings/danglers stay
+       position:absolute below and are unaffected by this (taken out of flex flow entirely) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   #revealMark.show { opacity: 0.97; }
 
@@ -456,10 +462,8 @@
   }
 
   #revealMark .placardWrap {
-    position: absolute;
-    top: calc(max(18px, env(safe-area-inset-top)) + 12px);
-    left: 50%;
-    transform: translateX(-50%);
+    /* horizontally centered by the flex parent now, not left:50%/transform */
+    margin-top: calc(max(18px, env(safe-area-inset-top)) + 12px);
     width: fit-content;
     /* not a binding constraint under normal use — a safety net only, now that .big's font-size
        is itself responsive (see below) and can't outgrow the screen on its own */
@@ -520,9 +524,10 @@
 
   #captionBar {
     position: absolute;
-    /* the placard is meaningfully taller than the old festiveHeading was — this was never
-       bumped to clear it, which is why the note ran into the board's bottom edge */
-    top: max(130px, calc(env(safe-area-inset-top) + 114px));
+    /* real number, not a guess: the danglers render at up to 135px wide, and the asset's own
+       677:430 aspect ratio makes that ~205px tall — taller than the board itself, and this was
+       still only cleared for the board's height, not the danglers' */
+    top: max(220px, calc(env(safe-area-inset-top) + 204px));
     left: 16px;
     right: 16px;
     text-align: center;
@@ -1612,7 +1617,7 @@
     }
 
     if (captionBar.style.display !== 'none' && (note || fromName)) {
-      let y = (130 + 16) * s; // matches #captionBar's live top offset, see its CSS comment
+      let y = (220 + 16) * s; // matches #captionBar's live top offset, see its CSS comment
       const maxWidth = canvas.width * 0.72;
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
